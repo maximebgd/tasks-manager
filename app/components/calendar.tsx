@@ -1,0 +1,292 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import type { Priority, Task } from "@/lib/types";
+import { priorityLabel } from "@/lib/types";
+import { useTasks } from "@/lib/tasks-context";
+
+const TODAY_ISO = "2026-07-31";
+
+const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const MONTHS = [
+  "Janvier",
+  "Février",
+  "Mars",
+  "Avril",
+  "Mai",
+  "Juin",
+  "Juillet",
+  "Août",
+  "Septembre",
+  "Octobre",
+  "Novembre",
+  "Décembre",
+];
+
+const priorityDot: Record<Priority, string> = {
+  low: "bg-faint",
+  medium: "bg-tag-yellow-text",
+  high: "bg-tag-red-text",
+};
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const toISO = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+export function Calendar() {
+  const { tasks } = useTasks();
+  const today = new Date(TODAY_ISO + "T00:00:00");
+  const [view, setView] = useState<"month" | "week">("month");
+  // Jour de référence (ISO) : détermine le mois affiché ou la semaine affichée.
+  const [anchor, setAnchor] = useState(TODAY_ISO);
+
+  const tasksByDate = useMemo(() => {
+    const map = new Map<string, Task[]>();
+    for (const t of tasks) {
+      if (!t.dueDate) continue;
+      const list = map.get(t.dueDate) ?? [];
+      list.push(t);
+      map.set(t.dueDate, list);
+    }
+    return map;
+  }, [tasks]);
+
+  const noDueDate = useMemo(
+    () => tasks.filter((t) => !t.dueDate),
+    [tasks],
+  );
+
+  const anchorDate = new Date(anchor + "T00:00:00");
+
+  const cells = useMemo(() => {
+    const base = new Date(anchor + "T00:00:00");
+
+    if (view === "week") {
+      const start = new Date(base);
+      start.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // Lundi
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        return d;
+      });
+    }
+
+    const year = base.getFullYear();
+    const month = base.getMonth();
+    const first = new Date(year, month, 1);
+    const startWeekday = (first.getDay() + 6) % 7; // Lundi = 0
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const result: Date[] = [];
+    for (let i = 0; i < startWeekday; i++) {
+      result.push(new Date(year, month, i - startWeekday + 1));
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      result.push(new Date(year, month, d));
+    }
+    while (result.length % 7 !== 0) {
+      const last = result[result.length - 1];
+      result.push(
+        new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1),
+      );
+    }
+    return result;
+  }, [anchor, view]);
+
+  // Décale d'un mois (vue mois) ou d'une semaine (vue semaine).
+  const shift = (delta: number) =>
+    setAnchor((a) => {
+      const d = new Date(a + "T00:00:00");
+      if (view === "week") d.setDate(d.getDate() + delta * 7);
+      else d.setMonth(d.getMonth() + delta);
+      return toISO(d);
+    });
+
+  const goToday = () => setAnchor(TODAY_ISO);
+
+  const periodLabel = useMemo(() => {
+    const base = new Date(anchor + "T00:00:00");
+    if (view === "week") {
+      const start = new Date(base);
+      start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      const fmt = (d: Date, withYear: boolean) =>
+        d.toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "short",
+          ...(withYear ? { year: "numeric" } : {}),
+        });
+      return `${fmt(start, false)} – ${fmt(end, true)}`;
+    }
+    return `${MONTHS[base.getMonth()]} ${base.getFullYear()}`;
+  }, [anchor, view]);
+
+  const todayISO = toISO(today);
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-content">
+            Calendrier
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            Échéances de vos tâches
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 rounded-md border border-line bg-surface p-1">
+            <ViewChip active={view === "month"} onClick={() => setView("month")}>
+              Mois
+            </ViewChip>
+            <ViewChip active={view === "week"} onClick={() => setView("week")}>
+              Semaine
+            </ViewChip>
+          </div>
+          <button
+            onClick={goToday}
+            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-content"
+          >
+            Aujourd&apos;hui
+          </button>
+          <div className="flex items-center rounded-md border border-line">
+            <button
+              onClick={() => shift(-1)}
+              aria-label={view === "week" ? "Semaine précédente" : "Mois précédent"}
+              className="rounded-l-md px-2 py-1.5 text-muted transition hover:bg-surface-hover hover:text-content"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              onClick={() => shift(1)}
+              aria-label={view === "week" ? "Semaine suivante" : "Mois suivant"}
+              className="rounded-r-md px-2 py-1.5 text-muted transition hover:bg-surface-hover hover:text-content"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
+          </div>
+          <span className="min-w-44 text-right text-lg font-semibold capitalize text-content">
+            {periodLabel}
+          </span>
+        </div>
+      </header>
+
+      <div className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="grid grid-cols-7 border-b border-line bg-surface-muted">
+          {WEEKDAYS.map((d) => (
+            <div
+              key={d}
+              className="px-2 py-2 text-center text-xs font-medium uppercase tracking-wide text-faint"
+            >
+              {d}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7">
+          {cells.map((date, i) => {
+            // En vue semaine, tous les jours sont « actifs » ; en vue mois, ceux du mois affiché.
+            const inMonth =
+              view === "week" || date.getMonth() === anchorDate.getMonth();
+            const dateISO = toISO(date);
+            const isToday = dateISO === todayISO;
+            const dayTasks = tasksByDate.get(dateISO) ?? [];
+
+            return (
+              <div
+                key={i}
+                className={`border-b border-r border-line p-1.5 ${
+                  view === "week" ? "min-h-64" : "min-h-28"
+                } ${inMonth ? "bg-surface" : "bg-surface-muted"}`}
+              >
+                <div className="mb-1 flex justify-end">
+                  <span
+                    className={`grid h-6 w-6 place-items-center rounded-full text-xs font-medium ${
+                      isToday
+                        ? "bg-accent text-white"
+                        : inMonth
+                          ? "text-muted"
+                          : "text-faint"
+                    }`}
+                  >
+                    {date.getDate()}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  {dayTasks.map((t) => (
+                    <div
+                      key={t.id}
+                      title={`${t.title} · ${priorityLabel(t.priority)}`}
+                      className={`flex items-center gap-1 rounded px-1.5 py-1 text-xs ${
+                        t.status === "done"
+                          ? "bg-surface-hover text-faint line-through"
+                          : "bg-surface-hover text-content"
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${priorityDot[t.priority]}`}
+                      />
+                      <span className="truncate">{t.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {noDueDate.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-2 text-sm font-medium text-content">
+            Sans échéance ({noDueDate.length})
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {noDueDate.map((t) => (
+              <span
+                key={t.id}
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-xs text-muted"
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${priorityDot[t.priority]}`}
+                />
+                {t.title}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function ViewChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+        active
+          ? "bg-accent text-white"
+          : "text-muted hover:bg-surface-hover hover:text-content"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}

@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* Dark mode piloté par la classe .dark sur <html> (toggle jour/nuit manuel). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Palette « Notion » — neutres chauds, contraste doux, accent bleu discret. */
+:root {
+  --page: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #f7f6f3;
+  --surface-hover: #f1f0ed;
+  --text: #37352f;
+  --text-muted: #6b6a65;
+  --text-faint: #9b9a97;
+  --border: #ebeae8;
+  --border-strong: #dcdbd8;
+  --accent: #2f80ed;
+  --accent-text: #2f80ed;
+  --accent-soft: #edf3fd;
+
+  /* Étiquettes colorées façon Notion (fond doux + texte lisible). */
+  --tag-gray-bg: #f1f0ee;
+  --tag-gray-text: #5f5e5b;
+  --tag-yellow-bg: #fbf3db;
+  --tag-yellow-text: #8a6d24;
+  --tag-red-bg: #fbe4e4;
+  --tag-red-text: #a8352f;
+  --tag-blue-bg: #e7f0fb;
+  --tag-blue-text: #2a6bc4;
+  --tag-green-bg: #e6f3ec;
+  --tag-green-text: #2f7d4f;
+}
+
+.dark {
+  --page: #191919;
+  --surface: #202020;
+  --surface-muted: #202020;
+  --surface-hover: #2a2a29;
+  --text: rgba(255, 255, 255, 0.87);
+  --text-muted: rgba(255, 255, 255, 0.53);
+  --text-faint: rgba(255, 255, 255, 0.36);
+  --border: #303030;
+  --border-strong: #3a3a3a;
+  --accent: #5b9bf3;
+  --accent-text: #6fa8f5;
+  --accent-soft: #26364b;
+
+  --tag-gray-bg: #2c2c2b;
+  --tag-gray-text: #b4b3ae;
+  --tag-yellow-bg: #3a3520;
+  --tag-yellow-text: #d6b872;
+  --tag-red-bg: #3c2523;
+  --tag-red-text: #e79c95;
+  --tag-blue-bg: #21344d;
+  --tag-blue-text: #86b4ef;
+  --tag-green-bg: #1f3528;
+  --tag-green-text: #7fc59a;
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-hover: var(--surface-hover);
+  --color-content: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-tag-gray: var(--tag-gray-bg);
+  --color-tag-gray-text: var(--tag-gray-text);
+  --color-tag-yellow: var(--tag-yellow-bg);
+  --color-tag-yellow-text: var(--tag-yellow-text);
+  --color-tag-red: var(--tag-red-bg);
+  --color-tag-red-text: var(--tag-red-text);
+  --color-tag-blue: var(--tag-blue-bg);
+  --color-tag-blue-text: var(--tag-blue-text);
+  --color-tag-green: var(--tag-green-bg);
+  --color-tag-green-text: var(--tag-green-text);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--page);
+  color: var(--text);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Transition douce lors du basculement jour/nuit. */
+html.theme-ready body,
+html.theme-ready body * {
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease;
+}

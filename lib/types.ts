@@ -1,0 +1,52 @@
+export type Status = "todo" | "in_progress" | "done";
+export type Priority = "low" | "medium" | "high";
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: Status;
+  priority: Priority;
+  /** Échéance au format ISO (YYYY-MM-DD), ou null si aucune. */
+  dueDate: string | null;
+  tags: string[];
+  createdAt: string;
+  /** Contenu libre de la fiche (notes), affiché sur la page détail. */
+  notes?: string;
+}
+
+/** Sous-tâche d'une todo journalière (puce cochable). */
+export interface SubTodo {
+  id: string;
+  title: string;
+  done: boolean;
+}
+
+/** Élément d'une todo journalière : une liste simple par jour. */
+export interface DailyTodo {
+  id: string;
+  /** Jour concerné au format ISO (YYYY-MM-DD). */
+  date: string;
+  title: string;
+  done: boolean;
+  /** Sous-tâches optionnelles, affichées en puces sous la tâche. */
+  subtasks: SubTodo[];
+}
+
+export const STATUSES: { value: Status; label: string }[] = [
+  { value: "todo", label: "À faire" },
+  { value: "in_progress", label: "En cours" },
+  { value: "done", label: "Terminé" },
+];
+
+export const PRIORITIES: { value: Priority; label: string }[] = [
+  { value: "low", label: "Basse" },
+  { value: "medium", label: "Moyenne" },
+  { value: "high", label: "Haute" },
+];
+
+export const statusLabel = (s: Status) =>
+  STATUSES.find((x) => x.value === s)?.label ?? s;
+
+export const priorityLabel = (p: Priority) =>
+  PRIORITIES.find((x) => x.value === p)?.label ?? p;
