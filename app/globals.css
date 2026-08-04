@@ -29,6 +29,9 @@
   --tag-blue-text: #2a6bc4;
   --tag-green-bg: #e6f3ec;
   --tag-green-text: #2f7d4f;
+
+  /* Échéance aujourd'hui (orange d'alerte). */
+  --due-today: #d9730d;
 }
 
 .dark {
@@ -55,6 +58,8 @@
   --tag-blue-text: #86b4ef;
   --tag-green-bg: #1f3528;
   --tag-green-text: #7fc59a;
+
+  --due-today: #f0a35e;
 }
 
 @theme inline {
@@ -81,6 +86,7 @@
   --color-tag-blue-text: var(--tag-blue-text);
   --color-tag-green: var(--tag-green-bg);
   --color-tag-green-text: var(--tag-green-text);
+  --color-due-today: var(--due-today);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

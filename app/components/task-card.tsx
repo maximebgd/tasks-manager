@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import type { Status, Task } from "@/lib/types";
 import { STATUSES } from "@/lib/types";
-import { todayISO } from "@/lib/date";
+import { daysBetween, todayISO } from "@/lib/date";
 import { PriorityBadge, Tag } from "./badges";
 
 function formatDate(iso: string) {
@@ -11,6 +11,16 @@ function formatDate(iso: string) {
     day: "numeric",
     month: "short",
   });
+}
+
+const plural = (n: number) => (n > 1 ? "s" : "");
+
+/** Décompte relatif à aujourd'hui : « aujourd'hui », « dans N jours », « en retard de N jours ». */
+function relativeDue(diff: number) {
+  if (diff === 0) return "aujourd'hui";
+  if (diff > 0) return `dans ${diff} jour${plural(diff)}`;
+  const late = -diff;
+  return `en retard de ${late} jour${plural(late)}`;
 }
 
 export function TaskCard({
@@ -39,8 +49,19 @@ export function TaskCard({
   dropPosition: "before" | "after" | null;
 }) {
   const isDone = task.status === "done";
-  const isOverdue =
-    !isDone && task.dueDate !== null && task.dueDate < todayISO();
+  const today = todayISO();
+  const isOverdue = !isDone && task.dueDate !== null && task.dueDate < today;
+  const isDueToday = !isDone && task.dueDate === today;
+  // Décompte affiché uniquement pour les tâches non terminées.
+  const dueCountdown =
+    !isDone && task.dueDate !== null
+      ? relativeDue(daysBetween(today, task.dueDate))
+      : null;
+  const dueColor = isOverdue
+    ? "text-tag-red-text"
+    : isDueToday
+      ? "text-due-today"
+      : "text-faint";
 
   // Discrimination simple/double clic : un simple clic ouvre l'aperçu après un
   // court délai, annulé si un double clic survient (qui ouvre la page détail).
@@ -144,16 +165,14 @@ export function TaskCard({
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
         {task.dueDate ? (
           <span
-            className={`inline-flex items-center gap-1 text-xs font-medium ${
-              isOverdue ? "text-tag-red-text" : "text-faint"
-            }`}
+            className={`inline-flex items-center gap-1 text-xs font-medium ${dueColor}`}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" />
               <path d="M16 2v4M8 2v4M3 10h18" />
             </svg>
             {formatDate(task.dueDate)}
-            {isOverdue && " · en retard"}
+            {dueCountdown && ` · ${dueCountdown}`}
           </span>
         ) : (
           <span className="text-xs text-faint">Pas d&apos;échéance</span>
