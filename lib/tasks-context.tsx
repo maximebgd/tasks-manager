@@ -14,8 +14,8 @@ type TasksContextValue = {
   tasks: Task[];
   /** Ajoute une tâche (en tête) + persiste. */
   addTask: (task: Task) => void;
-  /** Met à jour partiellement une tâche + persiste. */
-  updateTask: (id: string, patch: Partial<Task>) => void;
+  /** Met à jour partiellement une tâche + persiste. `successMsg` : toast affiché si la persistance réussit. */
+  updateTask: (id: string, patch: Partial<Task>, successMsg?: string) => void;
   deleteTask: (id: string) => void;
   /** Remplace l'ordre complet (drag & drop) + persiste positions/statuts. */
   reorderTasks: (next: Task[]) => void;
@@ -67,11 +67,13 @@ export function TasksProvider({
     );
   };
 
-  const updateTask = (id: string, patch: Partial<Task>) => {
+  const updateTask = (id: string, patch: Partial<Task>, successMsg?: string) => {
     const snapshot = tasks;
     setTasks(tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)));
     persist(
-      updateTaskAction(id, patch),
+      updateTaskAction(id, patch).then(() => {
+        if (successMsg) toast.success(successMsg);
+      }),
       snapshot,
       "Impossible d'enregistrer la modification",
     );

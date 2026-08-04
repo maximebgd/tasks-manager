@@ -28,12 +28,38 @@ const priorityDot: Record<Priority, string> = {
   high: "bg-tag-red-text",
 };
 
+// Libellé long d'une date ISO, pour les toasts (« 4 août »).
+function longDate(iso: string) {
+  return new Date(iso + "T00:00:00").toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+  });
+}
+
 export function Calendar() {
-  const { tasks } = useTasks();
+  const { tasks, updateTask } = useTasks();
   const today = new Date();
   const [view, setView] = useState<"month" | "week">("month");
   // Jour de référence (ISO) : détermine le mois affiché ou la semaine affichée.
   const [anchor, setAnchor] = useState(todayISO);
+  // Glisser-déposer d'une tâche sur un jour pour (re)définir son échéance.
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverISO, setDragOverISO] = useState<string | null>(null);
+
+  function resetDrag() {
+    setDraggingId(null);
+    setDragOverISO(null);
+  }
+
+  // Dépose la tâche glissée sur un jour : fixe/modifie sa dueDate (persisté).
+  function dropOnDay(dateISO: string) {
+    const id = draggingId;
+    resetDrag();
+    if (!id) return;
+    const task = tasks.find((t) => t.id === id);
+    if (!task || task.dueDate === dateISO) return;
+    updateTask(id, { dueDate: dateISO }, `Échéance fixée au ${longDate(dateISO)}`);
+  }
 
   const tasksByDate = useMemo(() => {
     const map = new Map<string, Task[]>();
@@ -193,12 +219,36 @@ export function Calendar() {
             const isToday = dateISO === todayStr;
             const dayTasks = tasksByDate.get(dateISO) ?? [];
 
+            const isDropTarget = dragOverISO === dateISO;
+
             return (
               <div
                 key={i}
-                className={`border-b border-r border-line p-1.5 ${
+                onDragOver={(e) => {
+                  if (!draggingId) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dragOverISO !== dateISO) setDragOverISO(dateISO);
+                }}
+                onDragLeave={(e) => {
+                  // Ignore les transitions vers un enfant de la case.
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setDragOverISO((cur) => (cur === dateISO ? null : cur));
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  dropOnDay(dateISO);
+                }}
+                className={`border-b border-r border-line p-1.5 transition-colors ${
                   view === "week" ? "min-h-64" : "min-h-28"
-                } ${inMonth ? "bg-surface" : "bg-surface-muted"}`}
+                } ${
+                  isDropTarget
+                    ? "bg-accent-soft ring-2 ring-inset ring-accent"
+                    : inMonth
+                      ? "bg-surface"
+                      : "bg-surface-muted"
+                }`}
               >
                 <div className="mb-1 flex justify-end">
                   <span
@@ -218,8 +268,17 @@ export function Calendar() {
                   {dayTasks.map((t) => (
                     <div
                       key={t.id}
-                      title={`${t.title} · ${priorityLabel(t.priority)}`}
-                      className={`flex items-center gap-1 rounded px-1.5 py-1 text-xs ${
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", t.id);
+                        setDraggingId(t.id);
+                      }}
+                      onDragEnd={resetDrag}
+                      title={`${t.title} · ${priorityLabel(t.priority)} · glisser pour changer d'échéance`}
+                      className={`flex cursor-grab items-center gap-1 rounded px-1.5 py-1 text-xs active:cursor-grabbing ${
+                        draggingId === t.id ? "opacity-40 ring-1 ring-accent" : ""
+                      } ${
                         t.status === "done"
                           ? "bg-surface-hover text-faint line-through"
                           : "bg-surface-hover text-content"
@@ -243,11 +302,24 @@ export function Calendar() {
           <h2 className="mb-2 text-sm font-medium text-content">
             Sans échéance ({noDueDate.length})
           </h2>
+          <p className="mb-2 text-xs text-faint">
+            Glissez une tâche sur un jour pour lui donner une échéance.
+          </p>
           <div className="flex flex-wrap gap-2">
             {noDueDate.map((t) => (
               <span
                 key={t.id}
-                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-xs text-muted"
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", t.id);
+                  setDraggingId(t.id);
+                }}
+                onDragEnd={resetDrag}
+                title="Glisser sur un jour pour définir l'échéance"
+                className={`inline-flex cursor-grab items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-xs text-muted active:cursor-grabbing ${
+                  draggingId === t.id ? "opacity-40 ring-1 ring-accent" : ""
+                }`}
               >
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${priorityDot[t.priority]}`}
