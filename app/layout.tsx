@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Nav } from "./components/nav";
 import { TasksProvider } from "@/lib/tasks-context";
+import { ToastProvider } from "@/lib/toast-context";
 import { getTasks } from "@/lib/data";
 import "./globals.css";
 
@@ -40,10 +41,12 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full flex flex-col bg-page text-content">
-        <TasksProvider initialTasks={tasks}>
-          <Nav />
-          {children}
-        </TasksProvider>
+        <ToastProvider>
+          <TasksProvider initialTasks={tasks}>
+            <Nav />
+            {children}
+          </TasksProvider>
+        </ToastProvider>
       </body>
     </html>
   );

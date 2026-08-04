@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState } from "react";
 import type { Task } from "./types";
+import { useToast } from "./toast-context";
 import {
   createTaskAction,
   deleteTaskAction,
@@ -22,12 +23,11 @@ type TasksContextValue = {
 
 const TasksContext = createContext<TasksContextValue | null>(null);
 
-const logError = (e: unknown) => console.error("Échec de persistance :", e);
-
 /**
  * Source unique des tâches, montée dans le layout et initialisée avec les
  * données lues en base côté serveur. Les mutations sont appliquées localement
- * (UI optimiste) puis persistées via des Server Actions.
+ * (UI optimiste) puis persistées via des Server Actions. En cas d'échec, on
+ * annule le changement (rollback) et on affiche un toast d'erreur.
  */
 export function TasksProvider({
   initialTasks,
@@ -37,36 +37,66 @@ export function TasksProvider({
   children: React.ReactNode;
 }) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const toast = useToast();
+
+  // Persiste une mutation ; en cas d'échec, restaure l'état précédent + toast.
+  const persist = (run: Promise<unknown>, snapshot: Task[], errMsg: string) => {
+    run.catch((e) => {
+      console.error(e);
+      setTasks(snapshot);
+      toast.error(errMsg);
+    });
+  };
 
   const addTask = (task: Task) => {
-    setTasks((prev) => [task, ...prev]);
-    createTaskAction({
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      status: task.status,
-      priority: task.priority,
-      dueDate: task.dueDate,
-      tags: task.tags,
-      notes: task.notes,
-    }).catch(logError);
+    const snapshot = tasks;
+    setTasks([task, ...tasks]);
+    persist(
+      createTaskAction({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        dueDate: task.dueDate,
+        tags: task.tags,
+        notes: task.notes,
+      }).then(() => toast.success("Tâche ajoutée")),
+      snapshot,
+      "Impossible d'ajouter la tâche",
+    );
   };
 
   const updateTask = (id: string, patch: Partial<Task>) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
-    updateTaskAction(id, patch).catch(logError);
+    const snapshot = tasks;
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+    persist(
+      updateTaskAction(id, patch),
+      snapshot,
+      "Impossible d'enregistrer la modification",
+    );
   };
 
   const deleteTask = (id: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-    deleteTaskAction(id).catch(logError);
+    const snapshot = tasks;
+    setTasks(tasks.filter((t) => t.id !== id));
+    persist(
+      deleteTaskAction(id).then(() => toast.success("Tâche supprimée")),
+      snapshot,
+      "Impossible de supprimer la tâche",
+    );
   };
 
   const reorderTasks = (next: Task[]) => {
+    const snapshot = tasks;
     setTasks(next);
-    reorderTasksAction(
-      next.map((t, i) => ({ id: t.id, status: t.status, position: i })),
-    ).catch(logError);
+    persist(
+      reorderTasksAction(
+        next.map((t, i) => ({ id: t.id, status: t.status, position: i })),
+      ),
+      snapshot,
+      "Impossible de réordonner les tâches",
+    );
   };
 
   return (

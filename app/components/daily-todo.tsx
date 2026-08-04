@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import type { DailyTodo } from "@/lib/types";
+import { toISO, todayISO } from "@/lib/date";
+import { useToast } from "@/lib/toast-context";
 import {
   createDailyTodoAction,
   setDailyTodoDoneAction,
@@ -12,14 +14,6 @@ import {
   reorderDailyTodosAction,
   reorderSubtasksAction,
 } from "@/app/actions/daily";
-
-const logError = (e: unknown) => console.error("Échec de persistance :", e);
-
-const TODAY_ISO = "2026-07-31";
-
-const pad = (n: number) => String(n).padStart(2, "0");
-const toISO = (d: Date) =>
-  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 function shiftDay(dateISO: string, delta: number) {
   const d = new Date(dateISO + "T00:00:00");
@@ -38,8 +32,22 @@ function formatLong(dateISO: string) {
 
 export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
   const [todos, setTodos] = useState<DailyTodo[]>(initialTodos);
-  const [selectedDate, setSelectedDate] = useState(TODAY_ISO);
+  const [selectedDate, setSelectedDate] = useState(todayISO);
   const [draft, setDraft] = useState("");
+  const toast = useToast();
+
+  // Persiste une mutation ; en cas d'échec, restaure l'état + toast d'erreur.
+  const persist = (
+    run: Promise<unknown>,
+    snapshot: DailyTodo[],
+    errMsg: string,
+  ) => {
+    run.catch((e) => {
+      console.error(e);
+      setTodos(snapshot);
+      toast.error(errMsg);
+    });
+  };
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropIndicator, setDropIndicator] = useState<{
     id: string;
@@ -70,27 +78,37 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
     const title = draft.trim();
     if (!title) return;
     const id = crypto.randomUUID();
-    setTodos((prev) => [
-      ...prev,
+    const snapshot = todos;
+    setTodos([
+      ...todos,
       { id, date: selectedDate, title, done: false, subtasks: [] },
     ]);
     setDraft("");
-    createDailyTodoAction({ id, date: selectedDate, title }).catch(logError);
+    persist(
+      createDailyTodoAction({ id, date: selectedDate, title }),
+      snapshot,
+      "Impossible d'ajouter la tâche",
+    );
   }
 
   function addSubtask(parentId: string) {
     const title = subDraft.trim();
     if (!title) return;
     const id = crypto.randomUUID();
-    setTodos((prev) =>
-      prev.map((t) =>
+    const snapshot = todos;
+    setTodos(
+      todos.map((t) =>
         t.id === parentId
           ? { ...t, subtasks: [...t.subtasks, { id, title, done: false }] }
           : t,
       ),
     );
     setSubDraft("");
-    createSubtaskAction({ id, dailyTodoId: parentId, title }).catch(logError);
+    persist(
+      createSubtaskAction({ id, dailyTodoId: parentId, title }),
+      snapshot,
+      "Impossible d'ajouter la sous-tâche",
+    );
   }
 
   function toggleSubtask(parentId: string, subId: string) {
@@ -99,8 +117,9 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
       ?.subtasks.find((s) => s.id === subId);
     if (!sub) return;
     const done = !sub.done;
-    setTodos((prev) =>
-      prev.map((t) =>
+    const snapshot = todos;
+    setTodos(
+      todos.map((t) =>
         t.id === parentId
           ? {
               ...t,
@@ -111,18 +130,27 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
           : t,
       ),
     );
-    setSubtaskDoneAction(subId, done).catch(logError);
+    persist(
+      setSubtaskDoneAction(subId, done),
+      snapshot,
+      "Impossible d'enregistrer la sous-tâche",
+    );
   }
 
   function removeSubtask(parentId: string, subId: string) {
-    setTodos((prev) =>
-      prev.map((t) =>
+    const snapshot = todos;
+    setTodos(
+      todos.map((t) =>
         t.id === parentId
           ? { ...t, subtasks: t.subtasks.filter((s) => s.id !== subId) }
           : t,
       ),
     );
-    deleteSubtaskAction(subId).catch(logError);
+    persist(
+      deleteSubtaskAction(subId),
+      snapshot,
+      "Impossible de supprimer la sous-tâche",
+    );
   }
 
   function resetSubDrag() {
@@ -149,12 +177,15 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
     const nextSubs = [...rest];
     nextSubs.splice(insertAt, 0, dragged);
 
-    setTodos((prev) =>
-      prev.map((t) => (t.id === parentId ? { ...t, subtasks: nextSubs } : t)),
+    const snapshot = todos;
+    setTodos(
+      todos.map((t) => (t.id === parentId ? { ...t, subtasks: nextSubs } : t)),
     );
-    reorderSubtasksAction(
-      nextSubs.map((s, i) => ({ id: s.id, position: i })),
-    ).catch(logError);
+    persist(
+      reorderSubtasksAction(nextSubs.map((s, i) => ({ id: s.id, position: i }))),
+      snapshot,
+      "Impossible de réordonner les sous-tâches",
+    );
     resetSubDrag();
   }
 
@@ -162,13 +193,23 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
     const current = todos.find((t) => t.id === id);
     if (!current) return;
     const done = !current.done;
-    setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done } : t)));
-    setDailyTodoDoneAction(id, done).catch(logError);
+    const snapshot = todos;
+    setTodos(todos.map((t) => (t.id === id ? { ...t, done } : t)));
+    persist(
+      setDailyTodoDoneAction(id, done),
+      snapshot,
+      "Impossible d'enregistrer la tâche",
+    );
   }
 
   function remove(id: string) {
-    setTodos((prev) => prev.filter((t) => t.id !== id));
-    deleteDailyTodoAction(id).catch(logError);
+    const snapshot = todos;
+    setTodos(todos.filter((t) => t.id !== id));
+    persist(
+      deleteDailyTodoAction(id).then(() => toast.success("Tâche supprimée")),
+      snapshot,
+      "Impossible de supprimer la tâche",
+    );
   }
 
   // Position d'insertion selon que le curseur est au-dessus ou en dessous du milieu.
@@ -193,14 +234,17 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
     const next = [...rest];
     next.splice(insertAt, 0, dragged);
 
+    const snapshot = todos;
     setTodos(next);
-    reorderDailyTodosAction(
-      next.map((t, i) => ({ id: t.id, position: i })),
-    ).catch(logError);
+    persist(
+      reorderDailyTodosAction(next.map((t, i) => ({ id: t.id, position: i }))),
+      snapshot,
+      "Impossible de réordonner les tâches",
+    );
     resetDrag();
   }
 
-  const isToday = selectedDate === TODAY_ISO;
+  const isToday = selectedDate === todayISO();
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
@@ -230,7 +274,7 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
           </div>
           {!isToday && (
             <button
-              onClick={() => setSelectedDate(TODAY_ISO)}
+              onClick={() => setSelectedDate(todayISO())}
               className="mt-0.5 text-xs font-medium text-accent-text hover:underline"
             >
               Revenir à aujourd&apos;hui

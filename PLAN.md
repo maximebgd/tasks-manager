@@ -37,10 +37,10 @@ Suivi du projet : d'abord le frontend, puis le backend (BDD) et l'empaquetage Do
 - [x] **Validation de bout en bout** (Docker BDD + app en local : fonctionne, persistance OK)
 - [ ] Commit du branchement BDD (Server Actions + lecture serveur)
 
-## Phase 4 — Finitions & robustesse ⬜
+## Phase 4 — Finitions & robustesse 🚧
 
-- [ ] Gestion d'erreur des mutations (rollback de l'UI + notification) au lieu d'un simple `console.error`
-- [ ] Remplacer la date « aujourd'hui » codée en dur (`2026-07-31`) par la vraie date
+- [x] Gestion d'erreur des mutations : rollback de l'UI + toast d'erreur (au lieu d'un simple `console.error`)
+- [x] Vraie date « aujourd'hui » (util `lib/date.ts`, plus de `2026-07-31` codé en dur)
 - [ ] Faire refléter les éditions du tableau dans `/daily` / `/calendar` si besoin de cohérence temps réel
 - [ ] (Optionnel) Authentification / multi-utilisateurs
 
