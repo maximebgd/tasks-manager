@@ -3,9 +3,8 @@
 import { useRef } from "react";
 import type { Status, Task } from "@/lib/types";
 import { STATUSES } from "@/lib/types";
+import { todayISO } from "@/lib/date";
 import { PriorityBadge, Tag } from "./badges";
-
-const TODAY = "2026-07-31";
 
 function formatDate(iso: string) {
   return new Date(iso + "T00:00:00").toLocaleDateString("fr-FR", {
@@ -40,7 +39,8 @@ export function TaskCard({
   dropPosition: "before" | "after" | null;
 }) {
   const isDone = task.status === "done";
-  const isOverdue = !isDone && task.dueDate !== null && task.dueDate < TODAY;
+  const isOverdue =
+    !isDone && task.dueDate !== null && task.dueDate < todayISO();
 
   // Discrimination simple/double clic : un simple clic ouvre l'aperçu après un
   // court délai, annulé si un double clic survient (qui ouvre la page détail).

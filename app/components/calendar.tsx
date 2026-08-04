@@ -4,10 +4,9 @@ import { useMemo, useState } from "react";
 import type { Priority, Task } from "@/lib/types";
 import { priorityLabel } from "@/lib/types";
 import { useTasks } from "@/lib/tasks-context";
+import { toISO, todayISO } from "@/lib/date";
 
-const TODAY_ISO = "2026-07-31";
-
-const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const WEEKDAYS =["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const MONTHS = [
   "Janvier",
   "Février",
@@ -29,16 +28,12 @@ const priorityDot: Record<Priority, string> = {
   high: "bg-tag-red-text",
 };
 
-const pad = (n: number) => String(n).padStart(2, "0");
-const toISO = (d: Date) =>
-  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
 export function Calendar() {
   const { tasks } = useTasks();
-  const today = new Date(TODAY_ISO + "T00:00:00");
+  const today = new Date();
   const [view, setView] = useState<"month" | "week">("month");
   // Jour de référence (ISO) : détermine le mois affiché ou la semaine affichée.
-  const [anchor, setAnchor] = useState(TODAY_ISO);
+  const [anchor, setAnchor] = useState(todayISO);
 
   const tasksByDate = useMemo(() => {
     const map = new Map<string, Task[]>();
@@ -102,7 +97,7 @@ export function Calendar() {
       return toISO(d);
     });
 
-  const goToday = () => setAnchor(TODAY_ISO);
+  const goToday = () => setAnchor(todayISO());
 
   const periodLabel = useMemo(() => {
     const base = new Date(anchor + "T00:00:00");
@@ -122,7 +117,7 @@ export function Calendar() {
     return `${MONTHS[base.getMonth()]} ${base.getFullYear()}`;
   }, [anchor, view]);
 
-  const todayISO = toISO(today);
+  const todayStr = toISO(today);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -195,7 +190,7 @@ export function Calendar() {
             const inMonth =
               view === "week" || date.getMonth() === anchorDate.getMonth();
             const dateISO = toISO(date);
-            const isToday = dateISO === todayISO;
+            const isToday = dateISO === todayStr;
             const dayTasks = tasksByDate.get(dateISO) ?? [];
 
             return (
