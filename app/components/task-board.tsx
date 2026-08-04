@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Priority, Status } from "@/lib/types";
+import type { Priority, Status, Task } from "@/lib/types";
 import { PRIORITIES, STATUSES } from "@/lib/types";
 import { useTasks } from "@/lib/tasks-context";
 import { TaskCard } from "./task-card";
@@ -17,12 +17,21 @@ const columnAccent: Record<Status, string> = {
   done: "bg-tag-green-text",
 };
 
+// Tri par échéance croissante : les plus proches en haut, sans échéance en bas.
+function byDueDateAsc(a: Task, b: Task) {
+  if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+  if (a.dueDate) return -1;
+  if (b.dueDate) return 1;
+  return 0;
+}
+
 export function TaskBoard() {
   const router = useRouter();
   const { tasks, addTask, updateTask, deleteTask, reorderTasks } = useTasks();
   const [query, setQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sortByDue, setSortByDue] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [peekId, setPeekId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -175,6 +184,23 @@ export function TaskBoard() {
             </FilterChip>
           ))}
         </div>
+
+        <button
+          onClick={() => setSortByDue((v) => !v)}
+          aria-pressed={sortByDue}
+          title="Trier par échéance la plus proche en haut"
+          className={`inline-flex items-center justify-center rounded-md border p-2 transition ${
+            sortByDue
+              ? "border-accent bg-accent text-white"
+              : "border-line bg-surface text-muted hover:bg-surface-hover hover:text-content"
+          }`}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m3 16 4 4 4-4" />
+            <path d="M7 20V4" />
+            <path d="M11 4h4M11 8h7M11 12h10" />
+          </svg>
+        </button>
       </div>
 
       {allTags.length > 0 && (
@@ -211,6 +237,7 @@ export function TaskBoard() {
       <div className="grid gap-4 md:grid-cols-3">
         {STATUSES.map((col) => {
           const items = filtered.filter((t) => t.status === col.value);
+          if (sortByDue) items.sort(byDueDateAsc);
           return (
             <section
               key={col.value}
