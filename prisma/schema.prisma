@@ -1,0 +1,67 @@
+// Schéma Prisma — source de vérité des tables. Modifier ici puis
+// `npm run db:migrate` (dev) ou `prisma migrate deploy` (prod/Docker).
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" pour le dev local (mac), musl pour l'image Docker alpine.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  todo
+  in_progress
+  done
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+/// Tâche du tableau (/). `position` conserve l'ordre du drag & drop.
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      Status   @default(todo)
+  priority    Priority @default(medium)
+  dueDate     String? // date ISO "YYYY-MM-DD", ou null
+  tags        String[]
+  notes       String?
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, position])
+}
+
+/// Élément d'une todo journalière (/daily), avec ses sous-tâches.
+model DailyTodo {
+  id        String    @id @default(cuid())
+  date      String // date ISO "YYYY-MM-DD"
+  title     String
+  done      Boolean   @default(false)
+  position  Int       @default(0)
+  subtasks  SubTodo[]
+  createdAt DateTime  @default(now())
+
+  @@index([date, position])
+}
+
+/// Sous-tâche cochable rattachée à une todo journalière.
+model SubTodo {
+  id          String    @id @default(cuid())
+  title       String
+  done        Boolean   @default(false)
+  position    Int       @default(0)
+  dailyTodo   DailyTodo @relation(fields: [dailyTodoId], references: [id], onDelete: Cascade)
+  dailyTodoId String
+
+  @@index([dailyTodoId, position])
+}
