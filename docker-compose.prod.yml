@@ -1,3 +1,15 @@
+# Déploiement « tout à puller » : aucun build, aucune source requise sur la machine.
+# Les deux images sont récupérées depuis un registre (Docker Hub + GHCR).
+#
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# TAG épingle la version de l'app (défaut : latest) :
+#   TAG=1.2.0 docker compose -f docker-compose.prod.yml up -d
+#
+# Note : le package GHCR étant privé par défaut, un `docker login ghcr.io`
+# est nécessaire au préalable (ou rendre le package public sur GitHub).
+
 services:
   db:
     image: postgres:16-alpine
@@ -6,9 +18,7 @@ services:
       POSTGRES_USER: tasks
       POSTGRES_PASSWORD: tasks
       POSTGRES_DB: tasks
-    ports:
-      # Exposé pour l'outillage local (prisma migrate/studio depuis l'hôte).
-      - "5432:5432"
+    # Pas de port exposé en prod : seul `web` (réseau interne) accède à la BDD.
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,17 +28,12 @@ services:
       retries: 10
 
   web:
-    # `docker compose build` / `up --build` construit en local et tague l'image
-    # sous ce nom. `docker compose pull` récupère l'image publiée par la CI (GHCR).
-    # TAG permet d'épingler une version : `TAG=1.2.0 docker compose up`.
     image: ghcr.io/maximebgd/tasks-manager:${TAG:-latest}
-    build: .
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
-      # `db` = nom du service = hôte réseau interne à Compose.
       DATABASE_URL: postgresql://tasks:tasks@db:5432/tasks?schema=public
       NODE_ENV: production
     ports:

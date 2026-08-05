@@ -1,0 +1,62 @@
+name: Build & publish Docker image
+
+# Build l'image de l'app (web) et la pousse sur le GitHub Container Registry (GHCR)
+# à chaque push sur `main` et sur chaque tag `v*`. La BDD (Postgres) reste un
+# service à part (docker-compose.yml) — on ne publie que l'image applicative.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  # Permet de relancer le build à la main depuis l'onglet Actions.
+  workflow_dispatch:
+
+env:
+  # ghcr.io/<owner>/<repo> — déjà en minuscules ici (maximebgd/tasks-manager).
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # requis pour pousser sur GHCR
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags & labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            # `latest` uniquement sur la branche par défaut (main)
+            type=raw,value=latest,enable={{is_default_branch}}
+            # nom de branche (ex. main) et sha court, pour tracer chaque build
+            type=ref,event=branch
+            type=sha,format=short
+            # versions sémantiques sur les tags git v1.2.3 -> 1.2.3, 1.2, 1
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Cache partagé entre runs pour accélérer les builds suivants.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
