@@ -61,7 +61,24 @@ export async function updateTaskAction(id: string, patch: TaskPatch) {
   });
 }
 
-export async function deleteTaskAction(id: string) {
+/** Met la tâche à la corbeille (soft delete) : renseigne `deletedAt`. */
+export async function softDeleteTaskAction(id: string) {
+  await prisma.task.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+}
+
+/** Restaure une tâche depuis la corbeille : efface `deletedAt`. */
+export async function restoreTaskAction(id: string) {
+  await prisma.task.update({
+    where: { id },
+    data: { deletedAt: null },
+  });
+}
+
+/** Supprime définitivement une tâche (irréversible). */
+export async function purgeTaskAction(id: string) {
   await prisma.task.delete({ where: { id } });
 }
 

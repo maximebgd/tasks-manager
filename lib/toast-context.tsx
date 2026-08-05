@@ -9,10 +9,17 @@ import {
 } from "react";
 
 type ToastType = "success" | "error";
-type Toast = { id: number; type: ToastType; message: string };
+/** Bouton d'action optionnel (ex. « Annuler ») affiché dans le toast. */
+type ToastAction = { label: string; onClick: () => void };
+type Toast = {
+  id: number;
+  type: ToastType;
+  message: string;
+  action?: ToastAction;
+};
 type ToastApi = {
-  success: (message: string) => void;
-  error: (message: string) => void;
+  success: (message: string, action?: ToastAction) => void;
+  error: (message: string, action?: ToastAction) => void;
 };
 
 const ToastContext = createContext<ToastApi | null>(null);
@@ -32,18 +39,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 
   const push = useCallback(
-    (type: ToastType, message: string) => {
+    (type: ToastType, message: string, action?: ToastAction) => {
       const id = ++counter;
-      setToasts((list) => [...list, { id, type, message }]);
-      setTimeout(() => remove(id), 3500);
+      setToasts((list) => [...list, { id, type, message, action }]);
+      // Les toasts avec action (ex. « Annuler ») restent un peu plus longtemps.
+      setTimeout(() => remove(id), action ? 6000 : 3500);
     },
     [remove],
   );
 
   const api = useMemo<ToastApi>(
     () => ({
-      success: (m) => push("success", m),
-      error: (m) => push("error", m),
+      success: (m, action) => push("success", m, action),
+      error: (m, action) => push("error", m, action),
     }),
     [push],
   );
@@ -53,23 +61,38 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-xs flex-col gap-2">
         {toasts.map((t) => (
-          <button
+          <div
             key={t.id}
-            onClick={() => remove(t.id)}
-            className="pointer-events-auto flex items-center gap-2.5 rounded-lg border border-line bg-surface px-3.5 py-2.5 text-left text-sm text-content shadow-lg animate-[toast-in_150ms_ease-out]"
+            className="pointer-events-auto flex items-center gap-2.5 rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm text-content shadow-lg animate-[toast-in_150ms_ease-out]"
           >
-            {t.type === "success" ? (
-              <svg className="shrink-0 text-tag-green-text" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
-            ) : (
-              <svg className="shrink-0 text-tag-red-text" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8v5M12 16h.01" />
-              </svg>
+            <button
+              onClick={() => remove(t.id)}
+              className="flex flex-1 items-center gap-2.5 text-left"
+            >
+              {t.type === "success" ? (
+                <svg className="shrink-0 text-tag-green-text" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              ) : (
+                <svg className="shrink-0 text-tag-red-text" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v5M12 16h.01" />
+                </svg>
+              )}
+              <span className="flex-1">{t.message}</span>
+            </button>
+            {t.action && (
+              <button
+                onClick={() => {
+                  t.action?.onClick();
+                  remove(t.id);
+                }}
+                className="shrink-0 rounded-md border border-line px-2 py-1 text-xs font-semibold text-accent transition hover:bg-surface-hover"
+              >
+                {t.action.label}
+              </button>
             )}
-            <span className="flex-1">{t.message}</span>
-          </button>
+          </div>
         ))}
       </div>
     </ToastContext.Provider>

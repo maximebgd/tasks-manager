@@ -8,6 +8,7 @@ const links = [
   { href: "/", label: "Tableau" },
   { href: "/daily", label: "Journalier" },
   { href: "/calendar", label: "Calendrier" },
+  { href: "/trash", label: "Corbeille" },
 ];
 
 export function Nav() {

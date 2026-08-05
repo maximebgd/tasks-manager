@@ -13,6 +13,8 @@ export interface Task {
   createdAt: string;
   /** Contenu libre de la fiche (notes), affiché sur la page détail. */
   notes?: string;
+  /** Date ISO de mise à la corbeille (soft delete), ou null si la tâche est active. */
+  deletedAt?: string | null;
 }
 
 /** Sous-tâche d'une todo journalière (puce cochable). */

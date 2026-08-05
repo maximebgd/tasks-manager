@@ -14,6 +14,7 @@ type TaskRow = {
   tags: string[];
   notes: string | null;
   createdAt: Date;
+  deletedAt: Date | null;
 };
 
 function toTask(row: TaskRow): Task {
@@ -27,12 +28,24 @@ function toTask(row: TaskRow): Task {
     tags: row.tags,
     createdAt: row.createdAt.toISOString().slice(0, 10),
     notes: row.notes ?? undefined,
+    deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
   };
 }
 
+/** Tâches actives (hors corbeille). */
 export async function getTasks(): Promise<Task[]> {
   const rows = await prisma.task.findMany({
+    where: { deletedAt: null },
     orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+  });
+  return rows.map(toTask);
+}
+
+/** Tâches à la corbeille, plus récemment supprimées en premier. */
+export async function getTrashedTasks(): Promise<Task[]> {
+  const rows = await prisma.task.findMany({
+    where: { deletedAt: { not: null } },
+    orderBy: { deletedAt: "desc" },
   });
   return rows.map(toTask);
 }

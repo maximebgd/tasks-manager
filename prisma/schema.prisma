@@ -37,8 +37,10 @@ model Task {
   position    Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime? // corbeille (soft delete) : null = active
 
   @@index([status, position])
+  @@index([deletedAt])
 }
 
 /// Élément d'une todo journalière (/daily), avec ses sous-tâches.
