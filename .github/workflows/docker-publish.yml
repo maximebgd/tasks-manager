@@ -25,6 +25,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # QEMU : permet de builder pour arm64 depuis un runner amd64 (émulation).
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -55,6 +59,8 @@ jobs:
         with:
           context: .
           push: true
+          # Image multi-arch : tourne sur serveurs amd64 ET Macs Apple Silicon.
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           # Cache partagé entre runs pour accélérer les builds suivants.
