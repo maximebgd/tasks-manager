@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { Priority, Status, Task } from "@/lib/types";
 import { PRIORITIES, STATUSES } from "@/lib/types";
 import { useTasks } from "@/lib/tasks-context";
+import { useTags } from "@/lib/tags-context";
+import { tagColorClass } from "./badges";
 import { TaskCard } from "./task-card";
 import { AddTaskForm } from "./add-task-form";
 import { TaskPeek } from "./task-peek";
@@ -28,9 +30,10 @@ function byDueDateAsc(a: Task, b: Task) {
 export function TaskBoard() {
   const router = useRouter();
   const { tasks, addTask, updateTask, deleteTask, reorderTasks } = useTasks();
+  const { tags: allTagDefs } = useTags();
   const [query, setQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [sortByDue, setSortByDue] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [peekId, setPeekId] = useState<string | null>(null);
@@ -88,16 +91,24 @@ export function TaskBoard() {
     resetDrag();
   }
 
-  // Tous les tags présents dans les tâches, dédupliqués et triés (ordre FR).
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    tasks.forEach((t) => t.tags.forEach((tag) => set.add(tag)));
-    return [...set].sort((a, b) => a.localeCompare(b, "fr"));
-  }, [tasks]);
+  // Noms (minuscule) des étiquettes par id, pour la recherche texte.
+  const tagName = useMemo(
+    () => new Map(allTagDefs.map((t) => [t.id, t.name.toLowerCase()])),
+    [allTagDefs],
+  );
 
-  function toggleTag(tag: string) {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+  // Étiquettes réellement utilisées par des tâches, triées (ordre FR).
+  const usedTags = useMemo(() => {
+    const used = new Set<string>();
+    tasks.forEach((t) => t.tagIds.forEach((id) => used.add(id)));
+    return allTagDefs
+      .filter((t) => used.has(t.id))
+      .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  }, [tasks, allTagDefs]);
+
+  function toggleTag(id: string) {
+    setSelectedTagIds((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
     );
   }
 
@@ -108,16 +119,16 @@ export function TaskBoard() {
         !q ||
         t.title.toLowerCase().includes(q) ||
         t.description?.toLowerCase().includes(q) ||
-        t.tags.some((tag) => tag.toLowerCase().includes(q));
+        t.tagIds.some((id) => tagName.get(id)?.includes(q));
       const matchesPriority =
         priorityFilter === "all" || t.priority === priorityFilter;
       // Filtre par tag : la tâche doit porter au moins un des tags sélectionnés.
       const matchesTags =
-        selectedTags.length === 0 ||
-        selectedTags.some((tag) => t.tags.includes(tag));
+        selectedTagIds.length === 0 ||
+        selectedTagIds.some((id) => t.tagIds.includes(id));
       return matchesQuery && matchesPriority && matchesTags;
     });
-  }, [tasks, query, priorityFilter, selectedTags]);
+  }, [tasks, query, priorityFilter, selectedTagIds, tagName]);
 
   const stats = useMemo(() => {
     const total = tasks.length;
@@ -203,29 +214,29 @@ export function TaskBoard() {
         </button>
       </div>
 
-      {allTags.length > 0 && (
+      {usedTags.length > 0 && (
         <div className="mb-6 flex flex-wrap items-center gap-1.5">
           <span className="mr-1 text-xs font-medium text-faint">Tags</span>
-          {allTags.map((tag) => {
-            const active = selectedTags.includes(tag);
+          {usedTags.map((tag) => {
+            const active = selectedTagIds.includes(tag.id);
             return (
               <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
+                key={tag.id}
+                onClick={() => toggleTag(tag.id)}
                 aria-pressed={active}
                 className={`rounded px-2 py-0.5 text-xs font-medium transition ${
                   active
                     ? "bg-accent text-white"
-                    : "bg-tag-blue text-tag-blue-text hover:opacity-80"
+                    : `${tagColorClass[tag.color]} hover:opacity-80`
                 }`}
               >
-                {tag}
+                {tag.name}
               </button>
             );
           })}
-          {selectedTags.length > 0 && (
+          {selectedTagIds.length > 0 && (
             <button
-              onClick={() => setSelectedTags([])}
+              onClick={() => setSelectedTagIds([])}
               className="ml-1 text-xs font-medium text-muted transition hover:text-content"
             >
               Effacer

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Nav } from "./components/nav";
 import { TasksProvider } from "@/lib/tasks-context";
+import { TagsProvider } from "@/lib/tags-context";
 import { ToastProvider } from "@/lib/toast-context";
-import { getTasks, getTrashedTasks } from "@/lib/data";
+import { getTags, getTasks, getTrashedTasks } from "@/lib/data";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,9 +30,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [tasks, trashedTasks] = await Promise.all([
+  const [tasks, trashedTasks, tags] = await Promise.all([
     getTasks(),
     getTrashedTasks(),
+    getTags(),
   ]);
 
   return (
@@ -45,10 +47,15 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-page text-content">
         <ToastProvider>
-          <TasksProvider initialTasks={tasks} initialTrashedTasks={trashedTasks}>
-            <Nav />
-            {children}
-          </TasksProvider>
+          <TagsProvider initialTags={tags}>
+            <TasksProvider
+              initialTasks={tasks}
+              initialTrashedTasks={trashedTasks}
+            >
+              <Nav />
+              {children}
+            </TasksProvider>
+          </TagsProvider>
         </ToastProvider>
       </body>
     </html>

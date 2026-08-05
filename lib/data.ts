@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import type { DailyTodo, Task } from "./types";
+import type { DailyTodo, Tag, TagColor, Task } from "./types";
 
 // Lectures serveur (Server Components uniquement) + conversion des lignes
 // Prisma vers les types utilisés par l'UI (null -> undefined, date -> ISO).
@@ -11,7 +11,7 @@ type TaskRow = {
   status: Task["status"];
   priority: Task["priority"];
   dueDate: string | null;
-  tags: string[];
+  tags: { id: string }[];
   notes: string | null;
   createdAt: Date;
   deletedAt: Date | null;
@@ -25,7 +25,7 @@ function toTask(row: TaskRow): Task {
     status: row.status,
     priority: row.priority,
     dueDate: row.dueDate,
-    tags: row.tags,
+    tagIds: row.tags.map((t) => t.id),
     createdAt: row.createdAt.toISOString().slice(0, 10),
     notes: row.notes ?? undefined,
     deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
@@ -37,6 +37,7 @@ export async function getTasks(): Promise<Task[]> {
   const rows = await prisma.task.findMany({
     where: { deletedAt: null },
     orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+    include: { tags: { select: { id: true } } },
   });
   return rows.map(toTask);
 }
@@ -46,8 +47,19 @@ export async function getTrashedTasks(): Promise<Task[]> {
   const rows = await prisma.task.findMany({
     where: { deletedAt: { not: null } },
     orderBy: { deletedAt: "desc" },
+    include: { tags: { select: { id: true } } },
   });
   return rows.map(toTask);
+}
+
+/** Toutes les étiquettes, triées par nom (ordre FR). */
+export async function getTags(): Promise<Tag[]> {
+  const rows = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    color: r.color as TagColor,
+  }));
 }
 
 export async function getDailyTodos(): Promise<DailyTodo[]> {

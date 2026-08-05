@@ -1,7 +1,32 @@
-import type { DailyTodo, Task } from "./types";
+import type { DailyTodo, Priority, Status, TagColor } from "./types";
 
-/** Données de test — remplacées par une vraie source de données à l'itération suivante. */
-export const mockTasks: Task[] = [
+/** Étiquettes de démonstration (id stable pour un seed idempotent). */
+export const mockTags: { id: string; name: string; color: TagColor }[] = [
+  { id: "tag-produit", name: "produit", color: "blue" },
+  { id: "tag-doc", name: "doc", color: "gray" },
+  { id: "tag-design", name: "design", color: "green" },
+  { id: "tag-setup", name: "setup", color: "yellow" },
+  { id: "tag-tech", name: "tech", color: "green" },
+  { id: "tag-dev", name: "dev", color: "blue" },
+  { id: "tag-front", name: "front", color: "yellow" },
+  { id: "tag-equipe", name: "équipe", color: "red" },
+];
+
+/** Tâche de seed : les étiquettes sont référencées par nom (cf. `mockTags`). */
+type SeedTask = {
+  id: string;
+  title: string;
+  description?: string;
+  status: Status;
+  priority: Priority;
+  dueDate: string | null;
+  tagNames: string[];
+  createdAt: string;
+  notes?: string;
+};
+
+/** Données de test — servent uniquement au seed (`prisma/seed.ts`). */
+export const mockTasks: SeedTask[] = [
   {
     id: "t1",
     title: "Rédiger les specs du projet",
@@ -9,7 +34,7 @@ export const mockTasks: Task[] = [
     status: "in_progress",
     priority: "high",
     dueDate: "2026-08-04",
-    tags: ["produit", "doc"],
+    tagNames: ["produit", "doc"],
     createdAt: "2026-07-28",
   },
   {
@@ -19,7 +44,7 @@ export const mockTasks: Task[] = [
     status: "todo",
     priority: "medium",
     dueDate: "2026-08-06",
-    tags: ["design"],
+    tagNames: ["design"],
     createdAt: "2026-07-29",
   },
   {
@@ -28,7 +53,7 @@ export const mockTasks: Task[] = [
     status: "done",
     priority: "low",
     dueDate: "2026-07-30",
-    tags: ["setup"],
+    tagNames: ["setup"],
     createdAt: "2026-07-27",
   },
   {
@@ -38,7 +63,7 @@ export const mockTasks: Task[] = [
     status: "done",
     priority: "medium",
     dueDate: null,
-    tags: ["tech"],
+    tagNames: ["tech"],
     createdAt: "2026-07-27",
   },
   {
@@ -48,7 +73,7 @@ export const mockTasks: Task[] = [
     status: "in_progress",
     priority: "high",
     dueDate: "2026-08-01",
-    tags: ["dev", "front"],
+    tagNames: ["dev", "front"],
     createdAt: "2026-07-30",
   },
   {
@@ -57,7 +82,7 @@ export const mockTasks: Task[] = [
     status: "todo",
     priority: "low",
     dueDate: null,
-    tags: ["design", "front"],
+    tagNames: ["design", "front"],
     createdAt: "2026-07-31",
   },
   {
@@ -66,7 +91,7 @@ export const mockTasks: Task[] = [
     status: "todo",
     priority: "medium",
     dueDate: "2026-08-02",
-    tags: ["dev"],
+    tagNames: ["dev"],
     createdAt: "2026-07-31",
   },
   {
@@ -76,7 +101,7 @@ export const mockTasks: Task[] = [
     status: "todo",
     priority: "high",
     dueDate: "2026-08-03",
-    tags: ["équipe"],
+    tagNames: ["équipe"],
     createdAt: "2026-07-31",
   },
 ];

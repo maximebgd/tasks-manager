@@ -4,6 +4,7 @@ import { useRef } from "react";
 import type { Status, Task } from "@/lib/types";
 import { STATUSES } from "@/lib/types";
 import { daysBetween, todayISO } from "@/lib/date";
+import { useTags } from "@/lib/tags-context";
 import { PriorityBadge, Tag } from "./badges";
 
 function formatDate(iso: string) {
@@ -48,6 +49,7 @@ export function TaskCard({
   onCardDrop: (targetId: string, position: "before" | "after") => void;
   dropPosition: "before" | "after" | null;
 }) {
+  const { getTag } = useTags();
   const isDone = task.status === "done";
   const today = todayISO();
   const isOverdue = !isDone && task.dueDate !== null && task.dueDate < today;
@@ -157,9 +159,12 @@ export function TaskCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <PriorityBadge priority={task.priority} />
-        {task.tags.map((t) => (
-          <Tag key={t} label={t} />
-        ))}
+        {task.tagIds.map((id) => {
+          const tag = getTag(id);
+          return tag ? (
+            <Tag key={id} label={tag.name} color={tag.color} />
+          ) : null;
+        })}
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">

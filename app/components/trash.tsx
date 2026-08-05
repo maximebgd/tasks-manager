@@ -1,6 +1,7 @@
 "use client";
 
 import { useTasks } from "@/lib/tasks-context";
+import { useTags } from "@/lib/tags-context";
 import { PriorityBadge, Tag } from "./badges";
 
 // Date + heure lisibles de mise à la corbeille (« 4 août à 21:07 »).
@@ -17,6 +18,7 @@ function formatDeletedAt(iso: string) {
 
 export function Trash() {
   const { trashedTasks, restoreTask, purgeTask } = useTasks();
+  const { getTag } = useTags();
 
   function emptyTrash() {
     if (
@@ -78,9 +80,12 @@ export function Trash() {
                 </h3>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                   <PriorityBadge priority={t.priority} />
-                  {t.tags.map((tag) => (
-                    <Tag key={tag} label={tag} />
-                  ))}
+                  {t.tagIds.map((id) => {
+                    const tag = getTag(id);
+                    return tag ? (
+                      <Tag key={id} label={tag.name} color={tag.color} />
+                    ) : null;
+                  })}
                   {t.deletedAt && (
                     <span className="text-xs text-faint">
                       Supprimée le {formatDeletedAt(t.deletedAt)}

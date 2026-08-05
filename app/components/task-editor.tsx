@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import type { Priority, Status } from "@/lib/types";
 import { PRIORITIES, STATUSES } from "@/lib/types";
 import { useTasks } from "@/lib/tasks-context";
+import { TagPicker } from "./tag-picker";
 
 /**
  * Champs éditables d'une tâche, partagés par l'aperçu (`peek`) et la page
@@ -20,8 +20,6 @@ export function TaskEditor({
 }) {
   const { tasks, updateTask } = useTasks();
   const task = tasks.find((t) => t.id === taskId);
-  // Les tags s'éditent en texte libre (séparés par des virgules), validés au blur.
-  const [tagsText, setTagsText] = useState(task ? task.tags.join(", ") : "");
 
   if (!task) {
     return (
@@ -36,15 +34,6 @@ export function TaskEditor({
         )}
       </div>
     );
-  }
-
-  function commitTags() {
-    updateTask(task!.id, {
-      tags: tagsText
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-    });
   }
 
   const field =
@@ -138,12 +127,9 @@ export function TaskEditor({
             </svg>
           }
         >
-          <input
-            value={tagsText}
-            onChange={(e) => setTagsText(e.target.value)}
-            onBlur={commitTags}
-            placeholder="Séparés par des virgules"
-            className={field}
+          <TagPicker
+            selectedIds={task.tagIds}
+            onChange={(ids) => updateTask(task.id, { tagIds: ids })}
           />
         </PropertyRow>
       </div>

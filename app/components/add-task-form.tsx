@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Priority, Task } from "@/lib/types";
 import { PRIORITIES } from "@/lib/types";
+import { TagPicker } from "./tag-picker";
 
 export function AddTaskForm({
   onAdd,
@@ -15,7 +16,7 @@ export function AddTaskForm({
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [dueDate, setDueDate] = useState("");
-  const [tags, setTags] = useState("");
+  const [tagIds, setTagIds] = useState<string[]>([]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,10 +30,7 @@ export function AddTaskForm({
       status: "todo",
       priority,
       dueDate: dueDate || null,
-      tags: tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
+      tagIds,
       createdAt: new Date().toISOString().slice(0, 10),
     });
     onClose();
@@ -104,14 +102,9 @@ export function AddTaskForm({
 
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-muted">
-            Tags (séparés par des virgules)
+            Tags
           </label>
-          <input
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="dev, front, urgent"
-            className={field}
-          />
+          <TagPicker selectedIds={tagIds} onChange={setTagIds} />
         </div>
       </div>
 

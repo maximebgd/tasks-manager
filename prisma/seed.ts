@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { mockTasks, mockDailyTodos } from "../lib/mock-data";
+import { mockTags, mockTasks, mockDailyTodos } from "../lib/mock-data";
 
 const prisma = new PrismaClient();
 
@@ -8,6 +8,16 @@ const prisma = new PrismaClient();
  * les ids stables des mocks (upsert), on peut donc le relancer sans doublon.
  */
 async function main() {
+  // Upsert par `name` (unique) : réutilise les étiquettes déjà présentes
+  // (ex. créées par la migration) et applique la couleur voulue.
+  for (const tag of mockTags) {
+    await prisma.tag.upsert({
+      where: { name: tag.name },
+      update: { color: tag.color },
+      create: { id: tag.id, name: tag.name, color: tag.color },
+    });
+  }
+
   for (const [i, t] of mockTasks.entries()) {
     await prisma.task.upsert({
       where: { id: t.id },
@@ -19,7 +29,8 @@ async function main() {
         status: t.status,
         priority: t.priority,
         dueDate: t.dueDate,
-        tags: t.tags,
+        // Rattache par nom (unique) aux étiquettes créées ci-dessus.
+        tags: { connect: t.tagNames.map((name) => ({ name })) },
         notes: t.notes,
         position: i,
       },

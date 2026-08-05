@@ -87,7 +87,7 @@ export function TasksProvider({
         status: task.status,
         priority: task.priority,
         dueDate: task.dueDate,
-        tags: task.tags,
+        tagIds: task.tagIds,
         notes: task.notes,
       }).then(() => toast.success("Tâche ajoutée")),
       snapshot,

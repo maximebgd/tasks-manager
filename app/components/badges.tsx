@@ -1,4 +1,4 @@
-import type { Priority } from "@/lib/types";
+import type { Priority, TagColor } from "@/lib/types";
 import { priorityLabel } from "@/lib/types";
 
 const priorityStyles: Record<Priority, string> = {
@@ -13,6 +13,24 @@ const priorityDot: Record<Priority, string> = {
   high: "bg-tag-red-text",
 };
 
+/** Classes fond + texte par couleur d'étiquette (tokens sémantiques, jour/nuit). */
+export const tagColorClass: Record<TagColor, string> = {
+  blue: "bg-tag-blue text-tag-blue-text",
+  green: "bg-tag-green text-tag-green-text",
+  yellow: "bg-tag-yellow text-tag-yellow-text",
+  red: "bg-tag-red text-tag-red-text",
+  gray: "bg-tag-gray text-tag-gray-text",
+};
+
+/** Pastille pleine par couleur d'étiquette. */
+export const tagDotClass: Record<TagColor, string> = {
+  blue: "bg-tag-blue-text",
+  green: "bg-tag-green-text",
+  yellow: "bg-tag-yellow-text",
+  red: "bg-tag-red-text",
+  gray: "bg-tag-gray-text",
+};
+
 export function PriorityBadge({ priority }: { priority: Priority }) {
   return (
     <span
@@ -24,9 +42,15 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
   );
 }
 
-export function Tag({ label }: { label: string }) {
+export function Tag({
+  label,
+  color = "blue",
+}: {
+  label: string;
+  color?: TagColor;
+}) {
   return (
-    <span className="rounded bg-tag-blue px-1.5 py-0.5 text-xs text-tag-blue-text">
+    <span className={`rounded px-1.5 py-0.5 text-xs ${tagColorClass[color]}`}>
       {label}
     </span>
   );

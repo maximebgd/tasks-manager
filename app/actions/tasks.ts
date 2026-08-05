@@ -13,7 +13,7 @@ export async function createTaskAction(input: {
   status: Status;
   priority: Priority;
   dueDate: string | null;
-  tags: string[];
+  tagIds: string[];
   notes?: string;
 }) {
   // Nouvelle tâche en tête de liste : position juste avant le minimum actuel.
@@ -28,7 +28,7 @@ export async function createTaskAction(input: {
       status: input.status,
       priority: input.priority,
       dueDate: input.dueDate,
-      tags: input.tags,
+      tags: { connect: input.tagIds.map((tagId) => ({ id: tagId })) },
       notes: input.notes,
       position,
     },
@@ -41,7 +41,7 @@ type TaskPatch = {
   status?: Status;
   priority?: Priority;
   dueDate?: string | null;
-  tags?: string[];
+  tagIds?: string[];
   notes?: string | null;
 };
 
@@ -55,7 +55,10 @@ export async function updateTaskAction(id: string, patch: TaskPatch) {
       status: patch.status,
       priority: patch.priority,
       dueDate: patch.dueDate,
-      tags: patch.tags,
+      // `set` remplace l'ensemble des étiquettes rattachées par la nouvelle liste.
+      tags: patch.tagIds
+        ? { set: patch.tagIds.map((tagId) => ({ id: tagId })) }
+        : undefined,
       notes: patch.notes,
     },
   });

@@ -1,6 +1,18 @@
 export type Status = "todo" | "in_progress" | "done";
 export type Priority = "low" | "medium" | "high";
 
+/** Couleurs sémantiques disponibles pour une étiquette (cf. tokens `tag-*`). */
+export type TagColor = "blue" | "green" | "yellow" | "red" | "gray";
+
+export const TAG_COLORS: TagColor[] = ["blue", "green", "yellow", "red", "gray"];
+
+/** Étiquette réutilisable, partagée entre tâches. */
+export interface Tag {
+  id: string;
+  name: string;
+  color: TagColor;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -9,7 +21,8 @@ export interface Task {
   priority: Priority;
   /** Échéance au format ISO (YYYY-MM-DD), ou null si aucune. */
   dueDate: string | null;
-  tags: string[];
+  /** Ids des étiquettes rattachées (résolues via le store des tags). */
+  tagIds: string[];
   createdAt: string;
   /** Contenu libre de la fiche (notes), affiché sur la page détail. */
   notes?: string;

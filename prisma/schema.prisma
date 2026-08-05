@@ -32,7 +32,7 @@ model Task {
   status      Status   @default(todo)
   priority    Priority @default(medium)
   dueDate     String? // date ISO "YYYY-MM-DD", ou null
-  tags        String[]
+  tags        Tag[]
   notes       String?
   position    Int      @default(0)
   createdAt   DateTime @default(now())
@@ -41,6 +41,16 @@ model Task {
 
   @@index([status, position])
   @@index([deletedAt])
+}
+
+/// Étiquette réutilisable, partagée entre tâches (relation N-N implicite).
+/// `color` est une clé de couleur sémantique : blue|green|yellow|red|gray.
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("blue")
+  tasks     Task[]
+  createdAt DateTime @default(now())
 }
 
 /// Élément d'une todo journalière (/daily), avec ses sous-tâches.
