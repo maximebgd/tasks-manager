@@ -15,20 +15,28 @@ const priorityDot: Record<Priority, string> = {
 
 /** Classes fond + texte par couleur d'étiquette (tokens sémantiques, jour/nuit). */
 export const tagColorClass: Record<TagColor, string> = {
-  blue: "bg-tag-blue text-tag-blue-text",
-  green: "bg-tag-green text-tag-green-text",
-  yellow: "bg-tag-yellow text-tag-yellow-text",
-  red: "bg-tag-red text-tag-red-text",
   gray: "bg-tag-gray text-tag-gray-text",
+  brown: "bg-tag-brown text-tag-brown-text",
+  orange: "bg-tag-orange text-tag-orange-text",
+  yellow: "bg-tag-yellow text-tag-yellow-text",
+  green: "bg-tag-green text-tag-green-text",
+  blue: "bg-tag-blue text-tag-blue-text",
+  purple: "bg-tag-purple text-tag-purple-text",
+  pink: "bg-tag-pink text-tag-pink-text",
+  red: "bg-tag-red text-tag-red-text",
 };
 
 /** Pastille pleine par couleur d'étiquette. */
 export const tagDotClass: Record<TagColor, string> = {
-  blue: "bg-tag-blue-text",
-  green: "bg-tag-green-text",
-  yellow: "bg-tag-yellow-text",
-  red: "bg-tag-red-text",
   gray: "bg-tag-gray-text",
+  brown: "bg-tag-brown-text",
+  orange: "bg-tag-orange-text",
+  yellow: "bg-tag-yellow-text",
+  green: "bg-tag-green-text",
+  blue: "bg-tag-blue-text",
+  purple: "bg-tag-purple-text",
+  pink: "bg-tag-pink-text",
+  red: "bg-tag-red-text",
 };
 
 export function PriorityBadge({ priority }: { priority: Priority }) {

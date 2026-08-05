@@ -2,9 +2,28 @@ export type Status = "todo" | "in_progress" | "done";
 export type Priority = "low" | "medium" | "high";
 
 /** Couleurs sémantiques disponibles pour une étiquette (cf. tokens `tag-*`). */
-export type TagColor = "blue" | "green" | "yellow" | "red" | "gray";
+export type TagColor =
+  | "gray"
+  | "brown"
+  | "orange"
+  | "yellow"
+  | "green"
+  | "blue"
+  | "purple"
+  | "pink"
+  | "red";
 
-export const TAG_COLORS: TagColor[] = ["blue", "green", "yellow", "red", "gray"];
+export const TAG_COLORS: TagColor[] = [
+  "gray",
+  "brown",
+  "orange",
+  "yellow",
+  "green",
+  "blue",
+  "purple",
+  "pink",
+  "red",
+];
 
 /** Étiquette réutilisable, partagée entre tâches. */
 export interface Tag {

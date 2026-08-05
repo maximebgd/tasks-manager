@@ -29,6 +29,14 @@
   --tag-blue-text: #2a6bc4;
   --tag-green-bg: #e6f3ec;
   --tag-green-text: #2f7d4f;
+  --tag-brown-bg: #efe4de;
+  --tag-brown-text: #7a4f35;
+  --tag-orange-bg: #fbeada;
+  --tag-orange-text: #b45f18;
+  --tag-purple-bg: #f0e7fb;
+  --tag-purple-text: #6740b8;
+  --tag-pink-bg: #fbe7f2;
+  --tag-pink-text: #b13a79;
 
   /* Échéance aujourd'hui (orange d'alerte). */
   --due-today: #d9730d;
@@ -58,6 +66,14 @@
   --tag-blue-text: #86b4ef;
   --tag-green-bg: #1f3528;
   --tag-green-text: #7fc59a;
+  --tag-brown-bg: #33261f;
+  --tag-brown-text: #c99b81;
+  --tag-orange-bg: #3a2a1a;
+  --tag-orange-text: #e79f63;
+  --tag-purple-bg: #2c2545;
+  --tag-purple-text: #b79ceb;
+  --tag-pink-bg: #38222f;
+  --tag-pink-text: #ed9bc4;
 
   --due-today: #f0a35e;
 }
@@ -86,6 +102,14 @@
   --color-tag-blue-text: var(--tag-blue-text);
   --color-tag-green: var(--tag-green-bg);
   --color-tag-green-text: var(--tag-green-text);
+  --color-tag-brown: var(--tag-brown-bg);
+  --color-tag-brown-text: var(--tag-brown-text);
+  --color-tag-orange: var(--tag-orange-bg);
+  --color-tag-orange-text: var(--tag-orange-text);
+  --color-tag-purple: var(--tag-purple-bg);
+  --color-tag-purple-text: var(--tag-purple-text);
+  --color-tag-pink: var(--tag-pink-bg);
+  --color-tag-pink-text: var(--tag-pink-text);
   --color-due-today: var(--due-today);
 
   --font-sans: var(--font-geist-sans);

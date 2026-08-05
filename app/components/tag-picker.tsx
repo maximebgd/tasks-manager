@@ -124,7 +124,7 @@ export function TagPicker({
       </div>
 
       {open && (
-        <div className="absolute left-0 top-full z-30 mt-1.5 w-64 rounded-lg border border-line bg-surface p-2 shadow-lg">
+        <div className="absolute left-0 top-full z-30 mt-1.5 w-72 rounded-lg border border-line bg-surface p-2 shadow-lg">
           <input
             autoFocus
             value={query}
@@ -149,7 +149,7 @@ export function TagPicker({
                   className="group flex items-center gap-1 rounded px-1 py-0.5"
                 >
                   {isEditing ? (
-                    <>
+                    <div className="flex w-full flex-col gap-1.5">
                       <input
                         autoFocus
                         value={editName}
@@ -158,9 +158,9 @@ export function TagPicker({
                           if (e.key === "Enter") commitEditName();
                         }}
                         onBlur={commitEditName}
-                        className="min-w-0 flex-1 rounded border border-accent bg-surface-muted px-1.5 py-1 text-sm text-content outline-none"
+                        className="w-full rounded border border-accent bg-surface-muted px-1.5 py-1 text-sm text-content outline-none"
                       />
-                      <div className="flex shrink-0 items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         {TAG_COLORS.map((c) => (
                           <button
                             key={c}
@@ -168,7 +168,7 @@ export function TagPicker({
                             aria-label={`Couleur ${c}`}
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => updateTag(t.id, { color: c })}
-                            className={`h-3.5 w-3.5 rounded-full ${tagDotClass[c]} ${
+                            className={`h-4 w-4 rounded-full ${tagDotClass[c]} ${
                               t.color === c
                                 ? "ring-2 ring-accent ring-offset-1 ring-offset-surface"
                                 : ""
@@ -176,7 +176,7 @@ export function TagPicker({
                           />
                         ))}
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <>
                       <button
