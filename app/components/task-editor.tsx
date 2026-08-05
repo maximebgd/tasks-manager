@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { Priority, Status } from "@/lib/types";
 import { PRIORITIES, STATUSES } from "@/lib/types";
 import { useTasks } from "@/lib/tasks-context";
 import { TagPicker } from "./tag-picker";
+import { Markdown } from "./markdown";
 
 /**
  * Champs éditables d'une tâche, partagés par l'aperçu (`peek`) et la page
@@ -20,6 +22,8 @@ export function TaskEditor({
 }) {
   const { tasks, updateTask } = useTasks();
   const task = tasks.find((t) => t.id === taskId);
+  // Onglet des notes : édition brute (Markdown) ou aperçu rendu.
+  const [notesTab, setNotesTab] = useState<"write" | "preview">("write");
 
   if (!task) {
     return (
@@ -150,17 +154,75 @@ export function TaskEditor({
       </div>
 
       <div className="mt-3">
-        <label className="mb-1 block text-xs font-medium text-muted">Notes</label>
-        <textarea
-          value={task.notes ?? ""}
-          onChange={(e) => updateTask(task.id, { notes: e.target.value })}
-          placeholder="Écrire quelque chose…"
-          className={`w-full resize-none bg-transparent text-sm leading-relaxed text-content outline-none placeholder:text-faint ${
-            variant === "page" ? "min-h-[16rem]" : "min-h-[8rem]"
-          }`}
-        />
+        <div className="mb-1 flex items-center justify-between">
+          <label className="text-xs font-medium text-muted">Notes</label>
+          <div className="flex items-center gap-0.5 rounded-md border border-line p-0.5">
+            <NotesTab
+              active={notesTab === "write"}
+              onClick={() => setNotesTab("write")}
+            >
+              Écrire
+            </NotesTab>
+            <NotesTab
+              active={notesTab === "preview"}
+              onClick={() => setNotesTab("preview")}
+            >
+              Aperçu
+            </NotesTab>
+          </div>
+        </div>
+
+        {notesTab === "write" ? (
+          <textarea
+            value={task.notes ?? ""}
+            onChange={(e) => updateTask(task.id, { notes: e.target.value })}
+            placeholder="Écrire en Markdown… (**gras**, - liste, # titre, | table |)"
+            className={`w-full resize-none bg-transparent font-mono text-sm leading-relaxed text-content outline-none placeholder:text-faint ${
+              variant === "page" ? "min-h-[16rem]" : "min-h-[8rem]"
+            }`}
+          />
+        ) : task.notes?.trim() ? (
+          <div
+            className={variant === "page" ? "min-h-[16rem]" : "min-h-[8rem]"}
+          >
+            <Markdown content={task.notes} />
+          </div>
+        ) : (
+          <p
+            className={`text-sm text-faint ${
+              variant === "page" ? "min-h-[16rem]" : "min-h-[8rem]"
+            }`}
+          >
+            Rien à prévisualiser.
+          </p>
+        )}
       </div>
     </div>
+  );
+}
+
+function NotesTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded px-2 py-0.5 text-xs font-medium transition ${
+        active
+          ? "bg-surface-hover text-content"
+          : "text-muted hover:text-content"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
