@@ -41,7 +41,7 @@ export function TaskEditor({
   }
 
   const field =
-    "w-full max-w-xs rounded border border-transparent bg-transparent px-2 py-1 text-sm text-content outline-none transition hover:bg-surface-hover focus:border-accent";
+    "w-full max-w-xs rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm text-content outline-none transition duration-200 ease-smooth hover:bg-surface-hover focus:border-accent";
 
   return (
     <div>
@@ -156,7 +156,7 @@ export function TaskEditor({
       <div className="mt-3">
         <div className="mb-1 flex items-center justify-between">
           <label className="text-xs font-medium text-muted">Notes</label>
-          <div className="flex items-center gap-0.5 rounded-md border border-line p-0.5">
+          <div className="flex items-center gap-0.5 rounded-full border border-line p-0.5 shadow-card">
             <NotesTab
               active={notesTab === "write"}
               onClick={() => setNotesTab("write")}
@@ -215,9 +215,9 @@ function NotesTab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded px-2 py-0.5 text-xs font-medium transition ${
+      className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition duration-200 ease-smooth ${
         active
-          ? "bg-surface-hover text-content"
+          ? "bg-surface text-content shadow-card"
           : "text-muted hover:text-content"
       }`}
     >

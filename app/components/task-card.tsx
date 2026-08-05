@@ -125,8 +125,8 @@ export function TaskCard({
         onDragStart(task.id);
       }}
       onDragEnd={onDragEnd}
-      className={`group cursor-pointer rounded-lg border border-line bg-surface p-3.5 transition hover:border-line-strong ${
-        isDragging ? "opacity-40 ring-2 ring-accent" : ""
+      className={`group cursor-pointer rounded-xl border border-line bg-surface p-3.5 shadow-card transition duration-200 ease-smooth hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift active:translate-y-0 active:shadow-card ${
+        isDragging ? "opacity-40 shadow-none ring-2 ring-accent" : ""
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -189,7 +189,7 @@ export function TaskCard({
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={(e) => e.stopPropagation()}
           aria-label="Changer le statut"
-          className="cursor-pointer rounded border border-line bg-surface-muted px-1.5 py-1 text-xs font-medium text-muted outline-none transition hover:border-line-strong focus:border-accent"
+          className="cursor-pointer rounded-lg border border-line bg-surface-muted px-1.5 py-1 text-xs font-medium text-muted outline-none transition duration-200 ease-smooth hover:border-line-strong focus:border-accent"
         >
           {STATUSES.map((s) => (
             <option key={s.value} value={s.value}>

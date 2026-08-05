@@ -114,7 +114,7 @@ export function TagPicker({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="inline-flex items-center gap-1 rounded border border-dashed border-line-strong px-1.5 py-0.5 text-xs text-muted transition hover:border-accent hover:text-content"
+          className="inline-flex items-center gap-1 rounded-full border border-dashed border-line-strong px-2 py-0.5 text-xs text-muted transition duration-200 ease-smooth hover:border-accent hover:text-content active:scale-95"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
@@ -124,7 +124,7 @@ export function TagPicker({
       </div>
 
       {open && (
-        <div className="absolute left-0 top-full z-30 mt-1.5 w-72 rounded-lg border border-line bg-surface p-2 shadow-lg">
+        <div className="glass absolute left-0 top-full z-30 mt-1.5 w-72 rounded-xl border border-glass-border p-2 shadow-pop animate-[pop-in_200ms_var(--ease-spring)]">
           <input
             autoFocus
             value={query}
@@ -136,7 +136,7 @@ export function TagPicker({
               }
             }}
             placeholder="Rechercher ou créer…"
-            className="mb-1.5 w-full rounded border border-line bg-surface-muted px-2 py-1.5 text-sm text-content outline-none transition focus:border-accent"
+            className="mb-1.5 w-full rounded-lg border border-line bg-surface-muted px-2.5 py-1.5 text-sm text-content outline-none transition duration-200 ease-smooth focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />
 
           <div className="max-h-60 overflow-y-auto">

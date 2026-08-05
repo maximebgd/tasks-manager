@@ -35,7 +35,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={isDark ? "Passer en mode jour" : "Passer en mode nuit"}
       title={isDark ? "Mode jour" : "Mode nuit"}
-      className="grid h-8 w-8 place-items-center rounded-md text-muted transition hover:bg-surface-hover hover:text-content"
+      className="grid h-8 w-8 place-items-center rounded-full text-muted transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-90"
     >
       {isDark ? (
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

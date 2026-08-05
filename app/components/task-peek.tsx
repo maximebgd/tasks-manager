@@ -27,11 +27,11 @@ export function TaskPeek({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/30 p-4 backdrop-blur-[1px] sm:p-8"
+      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/30 p-4 backdrop-blur-md animate-[overlay-in_200ms_ease-out] sm:p-8"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="mt-6 w-full max-w-2xl overflow-hidden rounded-xl border border-line bg-surface shadow-2xl"
+        className="mt-6 w-full max-w-2xl overflow-hidden rounded-2xl border border-line bg-surface shadow-pop animate-[pop-in_260ms_var(--ease-spring)]"
       >
         <div className="flex items-center justify-between border-b border-line px-3 py-2">
           <button

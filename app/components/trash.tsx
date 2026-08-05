@@ -48,7 +48,7 @@ export function Trash() {
         {trashedTasks.length > 0 && (
           <button
             onClick={emptyTrash}
-            className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted transition hover:bg-tag-red hover:text-tag-red-text"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-muted shadow-card transition duration-200 ease-smooth hover:bg-tag-red hover:text-tag-red-text active:scale-95"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
@@ -72,7 +72,7 @@ export function Trash() {
           {trashedTasks.map((t) => (
             <li
               key={t.id}
-              className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-surface px-3.5 py-3"
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface px-3.5 py-3 shadow-card transition duration-200 ease-smooth hover:shadow-lift"
             >
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-sm font-medium text-content">
@@ -97,7 +97,7 @@ export function Trash() {
               <div className="flex shrink-0 items-center gap-2">
                 <button
                   onClick={() => restoreTask(t.id)}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-content"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-muted transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-95"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 7v6h6" />
@@ -109,7 +109,7 @@ export function Trash() {
                   onClick={() => purgeTask(t.id)}
                   aria-label="Supprimer définitivement"
                   title="Supprimer définitivement"
-                  className="inline-flex items-center rounded-md p-1.5 text-faint transition hover:bg-tag-red hover:text-tag-red-text"
+                  className="inline-flex items-center rounded-full p-1.5 text-faint transition duration-200 ease-smooth hover:bg-tag-red hover:text-tag-red-text active:scale-90"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />

@@ -151,7 +151,7 @@ export function TaskBoard() {
         </div>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white transition hover:opacity-90"
+          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-card transition duration-200 ease-spring hover:shadow-lift hover:brightness-105 active:scale-95"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
@@ -174,11 +174,11 @@ export function TaskBoard() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Rechercher…"
-            className="w-full rounded-md border border-line bg-surface py-2 pl-9 pr-3 text-sm text-content outline-none transition placeholder:text-faint hover:border-line-strong focus:border-accent"
+            className="w-full rounded-full border border-line bg-surface py-2 pl-9 pr-3 text-sm text-content shadow-card outline-none transition duration-200 ease-smooth placeholder:text-faint hover:border-line-strong focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />
         </div>
 
-        <div className="flex items-center gap-1 rounded-md border border-line bg-surface p-1">
+        <div className="flex items-center gap-1 rounded-full border border-line bg-surface p-1 shadow-card">
           <FilterChip
             active={priorityFilter === "all"}
             onClick={() => setPriorityFilter("all")}
@@ -196,22 +196,24 @@ export function TaskBoard() {
           ))}
         </div>
 
-        <button
-          onClick={() => setSortByDue((v) => !v)}
-          aria-pressed={sortByDue}
-          title="Trier par échéance la plus proche en haut"
-          className={`inline-flex items-center justify-center rounded-md border p-2 transition ${
-            sortByDue
-              ? "border-accent bg-accent text-white"
-              : "border-line bg-surface text-muted hover:bg-surface-hover hover:text-content"
-          }`}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m3 16 4 4 4-4" />
-            <path d="M7 20V4" />
-            <path d="M11 4h4M11 8h7M11 12h10" />
-          </svg>
-        </button>
+        <div className="rounded-full border border-line bg-surface p-1 shadow-card">
+          <button
+            onClick={() => setSortByDue((v) => !v)}
+            aria-pressed={sortByDue}
+            title="Trier par échéance la plus proche en haut"
+            className={`inline-flex items-center justify-center rounded-full p-1.5 transition duration-200 ease-smooth active:scale-95 ${
+              sortByDue
+                ? "bg-accent text-white"
+                : "text-muted hover:bg-surface-hover hover:text-content"
+            }`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m3 16 4 4 4-4" />
+              <path d="M7 20V4" />
+              <path d="M11 4h4M11 8h7M11 12h10" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {usedTags.length > 0 && (
@@ -266,7 +268,7 @@ export function TaskBoard() {
                 }
               }}
               onDrop={() => dropOnColumn(col.value)}
-              className={`flex flex-col rounded-xl p-3 transition-colors ${
+              className={`flex flex-col rounded-2xl p-3 transition-colors duration-200 ease-smooth ${
                 dragOverStatus === col.value
                   ? "bg-accent-soft ring-2 ring-accent"
                   : "bg-surface-muted"
@@ -342,9 +344,9 @@ function FilterChip({
   return (
     <button
       onClick={onClick}
-      className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+      className={`rounded-full px-2.5 py-1 text-xs font-medium transition duration-200 ease-smooth ${
         active
-          ? "bg-accent text-white"
+          ? "bg-accent text-white shadow-card"
           : "text-muted hover:bg-surface-hover hover:text-content"
       }`}
     >

@@ -261,7 +261,7 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
         <button
           onClick={() => setSelectedDate((d) => shiftDay(d, -1))}
           aria-label="Jour précédent"
-          className="rounded-md border border-line p-2 text-muted transition hover:bg-surface-hover hover:text-content"
+          className="rounded-full border border-line bg-surface p-2 text-muted shadow-card transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-90"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m15 18-6-6 6-6" />
@@ -285,7 +285,7 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
         <button
           onClick={() => setSelectedDate((d) => shiftDay(d, 1))}
           aria-label="Jour suivant"
-          className="rounded-md border border-line p-2 text-muted transition hover:bg-surface-hover hover:text-content"
+          className="rounded-full border border-line bg-surface p-2 text-muted shadow-card transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-90"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m9 18 6-6-6-6" />
@@ -293,7 +293,7 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
         </button>
       </div>
 
-      <div className="rounded-xl border border-line bg-surface p-4">
+      <div className="rounded-2xl border border-line bg-surface p-4 shadow-card">
         {dayTodos.length > 0 && (
           <div className="mb-4">
             <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-muted">
@@ -349,7 +349,7 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
                 role="checkbox"
                 aria-checked={t.done}
                 tabIndex={0}
-                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 transition hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 transition hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 <span
                   draggable
@@ -569,12 +569,12 @@ export function DailyTodoList({ initialTodos }: { initialTodos: DailyTodo[] }) {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Ajouter une tâche pour ce jour…"
-            className="flex-1 rounded-md border border-line bg-surface px-3 py-2 text-sm text-content outline-none transition placeholder:text-faint hover:border-line-strong focus:border-accent"
+            className="flex-1 rounded-full border border-line bg-surface px-3.5 py-2 text-sm text-content shadow-card outline-none transition duration-200 ease-smooth placeholder:text-faint hover:border-line-strong focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />
           <button
             type="submit"
             disabled={!draft.trim()}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-card transition duration-200 ease-spring hover:shadow-lift hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           >
             Ajouter
           </button>

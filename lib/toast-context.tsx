@@ -63,7 +63,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="pointer-events-auto flex items-center gap-2.5 rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm text-content shadow-lg animate-[toast-in_150ms_ease-out]"
+            className="glass pointer-events-auto flex items-center gap-2.5 rounded-xl border border-glass-border px-3.5 py-2.5 text-sm text-content shadow-pop animate-[toast-in_200ms_var(--ease-spring)]"
           >
             <button
               onClick={() => remove(t.id)}
@@ -87,7 +87,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   t.action?.onClick();
                   remove(t.id);
                 }}
-                className="shrink-0 rounded-md border border-line px-2 py-1 text-xs font-semibold text-accent transition hover:bg-surface-hover"
+                className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs font-semibold text-accent transition duration-200 ease-smooth hover:bg-surface-hover active:scale-95"
               >
                 {t.action.label}
               </button>

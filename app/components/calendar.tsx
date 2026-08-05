@@ -158,7 +158,7 @@ export function Calendar() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 rounded-md border border-line bg-surface p-1">
+          <div className="flex items-center gap-1 rounded-full border border-line bg-surface p-1 shadow-card">
             <ViewChip active={view === "month"} onClick={() => setView("month")}>
               Mois
             </ViewChip>
@@ -168,15 +168,15 @@ export function Calendar() {
           </div>
           <button
             onClick={goToday}
-            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-content"
+            className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-muted shadow-card transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-95"
           >
             Aujourd&apos;hui
           </button>
-          <div className="flex items-center rounded-md border border-line">
+          <div className="flex items-center overflow-hidden rounded-full border border-line bg-surface shadow-card">
             <button
               onClick={() => shift(-1)}
               aria-label={view === "week" ? "Semaine précédente" : "Mois précédent"}
-              className="rounded-l-md px-2 py-1.5 text-muted transition hover:bg-surface-hover hover:text-content"
+              className="rounded-l-full px-2.5 py-1.5 text-muted transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-90"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m15 18-6-6 6-6" />
@@ -185,7 +185,7 @@ export function Calendar() {
             <button
               onClick={() => shift(1)}
               aria-label={view === "week" ? "Semaine suivante" : "Mois suivant"}
-              className="rounded-r-md px-2 py-1.5 text-muted transition hover:bg-surface-hover hover:text-content"
+              className="rounded-r-full px-2.5 py-1.5 text-muted transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-90"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m9 18 6-6-6-6" />
@@ -198,7 +198,7 @@ export function Calendar() {
         </div>
       </header>
 
-      <div className="overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
         <div className="grid grid-cols-7 border-b border-line bg-surface-muted">
           {WEEKDAYS.map((d) => (
             <div
@@ -317,7 +317,7 @@ export function Calendar() {
                 }}
                 onDragEnd={resetDrag}
                 title="Glisser sur un jour pour définir l'échéance"
-                className={`inline-flex cursor-grab items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1 text-xs text-muted active:cursor-grabbing ${
+                className={`inline-flex cursor-grab items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-xs text-muted shadow-card transition duration-200 ease-smooth hover:shadow-lift active:cursor-grabbing ${
                   draggingId === t.id ? "opacity-40 ring-1 ring-accent" : ""
                 }`}
               >
@@ -347,9 +347,9 @@ function ViewChip({
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+      className={`rounded-full px-2.5 py-1 text-xs font-medium transition duration-200 ease-smooth ${
         active
-          ? "bg-accent text-white"
+          ? "bg-accent text-white shadow-card"
           : "text-muted hover:bg-surface-hover hover:text-content"
       }`}
     >
