@@ -1,3 +1,4 @@
+import { daysFromTodayISO } from "./date";
 import type { DailyTodo, Priority, Status, TagColor } from "./types";
 
 /** Étiquettes de démonstration (id stable pour un seed idempotent). */
@@ -25,7 +26,12 @@ type SeedTask = {
   notes?: string;
 };
 
-/** Données de test — servent uniquement au seed (`prisma/seed.ts`). */
+/**
+ * Données de test — servent uniquement au seed (`prisma/seed.ts`).
+ * Les dates sont **relatives au jour du seed** (`daysFromTodayISO`) pour que la
+ * démo reste cohérente (tâches en retard / aujourd'hui / à venir) quel que soit
+ * le jour où on la génère. Aucune date en dur.
+ */
 export const mockTasks: SeedTask[] = [
   {
     id: "t1",
@@ -33,9 +39,9 @@ export const mockTasks: SeedTask[] = [
     description: "Définir le périmètre de la V1 et les user stories principales.",
     status: "in_progress",
     priority: "high",
-    dueDate: "2026-08-04",
+    dueDate: daysFromTodayISO(4),
     tagNames: ["produit", "doc"],
-    createdAt: "2026-07-28",
+    createdAt: daysFromTodayISO(-3),
   },
   {
     id: "t2",
@@ -43,18 +49,18 @@ export const mockTasks: SeedTask[] = [
     description: "Wireframe basse fidélité sur Figma.",
     status: "todo",
     priority: "medium",
-    dueDate: "2026-08-06",
+    dueDate: daysFromTodayISO(6),
     tagNames: ["design"],
-    createdAt: "2026-07-29",
+    createdAt: daysFromTodayISO(-2),
   },
   {
     id: "t3",
     title: "Configurer le dépôt Git",
     status: "done",
     priority: "low",
-    dueDate: "2026-07-30",
+    dueDate: daysFromTodayISO(-1),
     tagNames: ["setup"],
-    createdAt: "2026-07-27",
+    createdAt: daysFromTodayISO(-4),
   },
   {
     id: "t4",
@@ -64,7 +70,7 @@ export const mockTasks: SeedTask[] = [
     priority: "medium",
     dueDate: null,
     tagNames: ["tech"],
-    createdAt: "2026-07-27",
+    createdAt: daysFromTodayISO(-4),
   },
   {
     id: "t5",
@@ -72,9 +78,9 @@ export const mockTasks: SeedTask[] = [
     description: "Affichage, filtres et changement de statut.",
     status: "in_progress",
     priority: "high",
-    dueDate: "2026-08-01",
+    dueDate: daysFromTodayISO(1),
     tagNames: ["dev", "front"],
-    createdAt: "2026-07-30",
+    createdAt: daysFromTodayISO(-1),
   },
   {
     id: "t6",
@@ -83,16 +89,16 @@ export const mockTasks: SeedTask[] = [
     priority: "low",
     dueDate: null,
     tagNames: ["design", "front"],
-    createdAt: "2026-07-31",
+    createdAt: daysFromTodayISO(0),
   },
   {
     id: "t7",
     title: "Préparer les données de test",
     status: "todo",
     priority: "medium",
-    dueDate: "2026-08-02",
+    dueDate: daysFromTodayISO(2),
     tagNames: ["dev"],
-    createdAt: "2026-07-31",
+    createdAt: daysFromTodayISO(0),
   },
   {
     id: "t8",
@@ -100,20 +106,38 @@ export const mockTasks: SeedTask[] = [
     description: "Aligner sur les priorités de la semaine.",
     status: "todo",
     priority: "high",
-    dueDate: "2026-08-03",
+    dueDate: daysFromTodayISO(3),
     tagNames: ["équipe"],
-    createdAt: "2026-07-31",
+    createdAt: daysFromTodayISO(0),
   },
 ];
 
-/** Données de test pour la todo journalière (autour du 31 juillet 2026). */
+/** Données de test pour la todo journalière (relatives au jour du seed). */
 export const mockDailyTodos: DailyTodo[] = [
-  { id: "d1", date: "2026-07-30", title: "Relire la doc Next.js", done: true, subtasks: [] },
-  { id: "d2", date: "2026-07-30", title: "Répondre aux e-mails", done: true, subtasks: [] },
-  { id: "d3", date: "2026-07-31", title: "Standup à 10h", done: true, subtasks: [] },
+  {
+    id: "d1",
+    date: daysFromTodayISO(-1),
+    title: "Relire la doc Next.js",
+    done: true,
+    subtasks: [
+      { id: "d1s1", title: "App Router", done: true },
+      { id: "d1s2", title: "Server Actions", done: true },
+    ],
+  },
+  { id: "d2", date: daysFromTodayISO(-1), title: "Répondre aux e-mails", done: true, subtasks: [] },
+  {
+    id: "d3",
+    date: daysFromTodayISO(0),
+    title: "Standup à 10h",
+    done: true,
+    subtasks: [
+      { id: "d3s1", title: "Préparer les points bloquants", done: true },
+      { id: "d3s2", title: "Noter les décisions", done: true },
+    ],
+  },
   {
     id: "d4",
-    date: "2026-07-31",
+    date: daysFromTodayISO(0),
     title: "Coder la vue calendrier",
     done: true,
     subtasks: [
@@ -123,7 +147,7 @@ export const mockDailyTodos: DailyTodo[] = [
   },
   {
     id: "d5",
-    date: "2026-07-31",
+    date: daysFromTodayISO(0),
     title: "Tester le drag & drop",
     done: false,
     subtasks: [
@@ -131,7 +155,26 @@ export const mockDailyTodos: DailyTodo[] = [
       { id: "d5s2", title: "Déplacer entre colonnes", done: false },
     ],
   },
-  { id: "d6", date: "2026-07-31", title: "Faire une pause déjeuner", done: false, subtasks: [] },
-  { id: "d7", date: "2026-08-01", title: "Préparer la démo", done: false, subtasks: [] },
-  { id: "d8", date: "2026-08-01", title: "Point avec l'équipe design", done: false, subtasks: [] },
+  { id: "d6", date: daysFromTodayISO(0), title: "Faire une pause déjeuner", done: false, subtasks: [] },
+  {
+    id: "d7",
+    date: daysFromTodayISO(1),
+    title: "Préparer la démo",
+    done: false,
+    subtasks: [
+      { id: "d7s1", title: "Écrire le script de démo", done: false },
+      { id: "d7s2", title: "Préparer le jeu de données", done: false },
+      { id: "d7s3", title: "Répéter une fois", done: false },
+    ],
+  },
+  {
+    id: "d8",
+    date: daysFromTodayISO(1),
+    title: "Point avec l'équipe design",
+    done: false,
+    subtasks: [
+      { id: "d8s1", title: "Lister les écrans à valider", done: false },
+      { id: "d8s2", title: "Partager les maquettes", done: false },
+    ],
+  },
 ];

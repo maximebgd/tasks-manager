@@ -7,6 +7,13 @@ export const toISO = (d: Date) =>
 /** Date du jour (locale) au format "YYYY-MM-DD". */
 export const todayISO = () => toISO(new Date());
 
+/** Date décalée de `days` jours par rapport à aujourd'hui, au format "YYYY-MM-DD". */
+export const daysFromTodayISO = (days: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return toISO(d);
+};
+
 /** Nombre de jours entiers de `fromISO` à `toISO` (positif si `toISO` est après). */
 export const daysBetween = (fromISO: string, toISO: string) => {
   const from = new Date(fromISO + "T00:00:00");
