@@ -340,3 +340,20 @@ html.theme-ready body * {
   max-width: 100%;
   border-radius: 8px;
 }
+
+/* Éditeur WYSIWYG (TipTap/ProseMirror) : hérite de la typographie `.markdown`. */
+.ProseMirror {
+  outline: none;
+}
+.ProseMirror :where(u) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* Placeholder de l'extension TipTap sur le premier bloc vide. */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--text-faint);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

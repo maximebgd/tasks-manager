@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import type { Priority, Status } from "@/lib/types";
 import { PRIORITIES, STATUSES } from "@/lib/types";
 import { useTasks } from "@/lib/tasks-context";
 import { TagPicker } from "./tag-picker";
-import { Markdown } from "./markdown";
+import { NotesEditor } from "./notes-editor";
 
 /**
  * Champs éditables d'une tâche, partagés par l'aperçu (`peek`) et la page
@@ -22,8 +21,6 @@ export function TaskEditor({
 }) {
   const { tasks, updateTask } = useTasks();
   const task = tasks.find((t) => t.id === taskId);
-  // Onglet des notes : édition brute (Markdown) ou aperçu rendu.
-  const [notesTab, setNotesTab] = useState<"write" | "preview">("write");
 
   if (!task) {
     return (
@@ -154,75 +151,15 @@ export function TaskEditor({
       </div>
 
       <div className="mt-3">
-        <div className="mb-1 flex items-center justify-between">
-          <label className="text-xs font-medium text-muted">Notes</label>
-          <div className="flex items-center gap-0.5 rounded-full border border-line p-0.5 shadow-card">
-            <NotesTab
-              active={notesTab === "write"}
-              onClick={() => setNotesTab("write")}
-            >
-              Écrire
-            </NotesTab>
-            <NotesTab
-              active={notesTab === "preview"}
-              onClick={() => setNotesTab("preview")}
-            >
-              Aperçu
-            </NotesTab>
-          </div>
-        </div>
-
-        {notesTab === "write" ? (
-          <textarea
-            value={task.notes ?? ""}
-            onChange={(e) => updateTask(task.id, { notes: e.target.value })}
-            placeholder="Écrire en Markdown… (**gras**, - liste, # titre, | table |)"
-            className={`w-full resize-none bg-transparent font-mono text-sm leading-relaxed text-content outline-none placeholder:text-faint ${
-              variant === "page" ? "min-h-[16rem]" : "min-h-[8rem]"
-            }`}
-          />
-        ) : task.notes?.trim() ? (
-          <div
-            className={variant === "page" ? "min-h-[16rem]" : "min-h-[8rem]"}
-          >
-            <Markdown content={task.notes} />
-          </div>
-        ) : (
-          <p
-            className={`text-sm text-faint ${
-              variant === "page" ? "min-h-[16rem]" : "min-h-[8rem]"
-            }`}
-          >
-            Rien à prévisualiser.
-          </p>
-        )}
+        <NotesEditor
+          key={task.id}
+          label="Notes"
+          value={task.notes ?? ""}
+          onChange={(next) => updateTask(task.id, { notes: next })}
+          minHeightClass={variant === "page" ? "min-h-[16rem]" : "min-h-[8rem]"}
+        />
       </div>
     </div>
-  );
-}
-
-function NotesTab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition duration-200 ease-smooth ${
-        active
-          ? "bg-surface text-content shadow-card"
-          : "text-muted hover:text-content"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 
