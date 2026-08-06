@@ -18,6 +18,7 @@
   --accent: #007aff;
   --accent-text: #0071e3;
   --accent-soft: #e8f1ff;
+  --danger: #e5484d;
 
   /* Matériau « Liquid Glass » (couche navigation) + ombres feuilletées façon macOS. */
   --glass: rgba(255, 255, 255, 0.72);
@@ -66,6 +67,7 @@
   --accent: #0a84ff;
   --accent-text: #409cff;
   --accent-soft: #10233c;
+  --danger: #f2555a;
 
   --glass: rgba(30, 30, 30, 0.68);
   --glass-border: rgba(255, 255, 255, 0.09);
@@ -111,6 +113,7 @@
   --color-accent: var(--accent);
   --color-accent-text: var(--accent-text);
   --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
   --color-glass: var(--glass);
   --color-glass-border: var(--glass-border);
 

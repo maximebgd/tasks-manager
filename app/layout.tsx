@@ -4,6 +4,7 @@ import { Nav } from "./components/nav";
 import { TasksProvider } from "@/lib/tasks-context";
 import { TagsProvider } from "@/lib/tags-context";
 import { ToastProvider } from "@/lib/toast-context";
+import { ConfirmProvider } from "@/lib/confirm-context";
 import { getTags, getTasks, getTrashedTasks } from "@/lib/data";
 import "./globals.css";
 
@@ -52,15 +53,17 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex bg-page text-content">
         <ToastProvider>
-          <TagsProvider initialTags={tags}>
-            <TasksProvider
-              initialTasks={tasks}
-              initialTrashedTasks={trashedTasks}
-            >
-              <Nav />
-              <div className="flex min-w-0 flex-1 flex-col">{children}</div>
-            </TasksProvider>
-          </TagsProvider>
+          <ConfirmProvider>
+            <TagsProvider initialTags={tags}>
+              <TasksProvider
+                initialTasks={tasks}
+                initialTrashedTasks={trashedTasks}
+              >
+                <Nav />
+                <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+              </TasksProvider>
+            </TagsProvider>
+          </ConfirmProvider>
         </ToastProvider>
       </body>
     </html>

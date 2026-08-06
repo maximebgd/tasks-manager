@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { TAG_COLORS } from "@/lib/types";
 import { useTags } from "@/lib/tags-context";
+import { useConfirm } from "@/lib/confirm-context";
 import { tagDotClass } from "./badges";
 
 /**
@@ -14,6 +15,7 @@ import { tagDotClass } from "./badges";
  */
 export function TagManager() {
   const { tags, addTag, updateTag, deleteTag, reorderTags } = useTags();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -50,8 +52,14 @@ export function TagManager() {
     setEditingId(null);
   }
 
-  function remove(id: string) {
-    if (!window.confirm("Supprimer cette étiquette de toutes les tâches ?")) return;
+  async function remove(id: string, name: string) {
+    const ok = await confirm({
+      title: "Supprimer l'étiquette",
+      message: `« ${name} » sera retirée de toutes les tâches. Cette action est irréversible.`,
+      confirmLabel: "Supprimer",
+      danger: true,
+    });
+    if (!ok) return;
     deleteTag(id);
     if (editingId === id) setEditingId(null);
   }
@@ -205,7 +213,7 @@ export function TagManager() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => remove(t.id)}
+                        onClick={() => remove(t.id, t.name)}
                         aria-label="Supprimer l'étiquette"
                         className="shrink-0 rounded p-1 text-faint opacity-0 transition hover:bg-tag-red hover:text-tag-red-text group-hover:opacity-100"
                       >

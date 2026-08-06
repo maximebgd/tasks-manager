@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { TagColor } from "@/lib/types";
 import { TAG_COLORS } from "@/lib/types";
 import { useTags } from "@/lib/tags-context";
+import { useConfirm } from "@/lib/confirm-context";
 import { tagColorClass, tagDotClass } from "./badges";
 
 /**
@@ -19,6 +20,7 @@ export function TagPicker({
   onChange: (ids: string[]) => void;
 }) {
   const { tags, getTag, addTag, updateTag, deleteTag } = useTags();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -82,9 +84,14 @@ export function TagPicker({
     setEditingId(null);
   }
 
-  function remove(id: string) {
-    if (!window.confirm("Supprimer cette étiquette de toutes les tâches ?"))
-      return;
+  async function remove(id: string, name: string) {
+    const ok = await confirm({
+      title: "Supprimer l'étiquette",
+      message: `« ${name} » sera retirée de toutes les tâches. Cette action est irréversible.`,
+      confirmLabel: "Supprimer",
+      danger: true,
+    });
+    if (!ok) return;
     deleteTag(id);
     onChange(selectedIds.filter((x) => x !== id));
     if (editingId === id) setEditingId(null);
@@ -208,7 +215,7 @@ export function TagPicker({
                       </button>
                       <button
                         type="button"
-                        onClick={() => remove(t.id)}
+                        onClick={() => remove(t.id, t.name)}
                         aria-label="Supprimer l'étiquette"
                         className="shrink-0 rounded p-1 text-faint opacity-0 transition hover:bg-tag-red hover:text-tag-red-text group-hover:opacity-100"
                       >

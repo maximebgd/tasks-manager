@@ -2,6 +2,7 @@
 
 import { useTasks } from "@/lib/tasks-context";
 import { useTags } from "@/lib/tags-context";
+import { useConfirm } from "@/lib/confirm-context";
 import { PriorityBadge, Tag } from "./badges";
 
 // Date + heure lisibles de mise à la corbeille (« 4 août à 21:07 »).
@@ -19,14 +20,20 @@ function formatDeletedAt(iso: string) {
 export function Trash() {
   const { trashedTasks, restoreTask, purgeTask } = useTasks();
   const { getTag } = useTags();
+  const confirm = useConfirm();
 
-  function emptyTrash() {
-    if (
-      !window.confirm(
-        `Supprimer définitivement ${trashedTasks.length} tâche(s) ? Cette action est irréversible.`,
-      )
-    )
-      return;
+  async function emptyTrash() {
+    const ok = await confirm({
+      title: "Vider la corbeille",
+      message: `${trashedTasks.length} tâche${
+        trashedTasks.length > 1 ? "s" : ""
+      } ${
+        trashedTasks.length > 1 ? "seront supprimées" : "sera supprimée"
+      } définitivement. Cette action est irréversible.`,
+      confirmLabel: "Vider la corbeille",
+      danger: true,
+    });
+    if (!ok) return;
     trashedTasks.forEach((t) => purgeTask(t.id));
   }
 
