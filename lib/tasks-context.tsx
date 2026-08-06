@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import type { Task } from "./types";
 import { useToast } from "./toast-context";
+import { useSync } from "./sync-context";
 import {
   createTaskAction,
   purgeTaskAction,
@@ -57,6 +58,7 @@ export function TasksProvider({
     ...initialTrashedTasks,
   ]);
   const toast = useToast();
+  const sync = useSync();
 
   const tasks = useMemo(() => allTasks.filter((t) => !t.deletedAt), [allTasks]);
   const trashedTasks = useMemo(
@@ -69,7 +71,7 @@ export function TasksProvider({
 
   // Persiste une mutation ; en cas d'échec, restaure l'état précédent + toast.
   const persist = (run: Promise<unknown>, snapshot: Task[], errMsg: string) => {
-    run.catch((e) => {
+    sync.track(run).catch((e) => {
       console.error(e);
       setAllTasks(snapshot);
       toast.error(errMsg);

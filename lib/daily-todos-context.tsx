@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import type { DailyTodo, SubTodo } from "./types";
 import { useToast } from "./toast-context";
+import { useSync } from "./sync-context";
 import {
   createDailyTodoAction,
   setDailyTodoDoneAction,
@@ -76,6 +77,7 @@ export function DailyTodosProvider({
 }) {
   const [allTodos, setAllTodos] = useState<DailyTodo[]>(initialTodos);
   const toast = useToast();
+  const sync = useSync();
 
   const dailyTodos = useMemo(
     () =>
@@ -121,7 +123,7 @@ export function DailyTodosProvider({
     snapshot: DailyTodo[],
     errMsg: string,
   ) => {
-    run.catch((e) => {
+    sync.track(run).catch((e) => {
       console.error(e);
       setAllTodos(snapshot);
       toast.error(errMsg);

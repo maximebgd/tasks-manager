@@ -5,6 +5,7 @@ import { TasksProvider } from "@/lib/tasks-context";
 import { TagsProvider } from "@/lib/tags-context";
 import { DailyTodosProvider } from "@/lib/daily-todos-context";
 import { ToastProvider } from "@/lib/toast-context";
+import { SyncProvider } from "@/lib/sync-context";
 import { ConfirmProvider } from "@/lib/confirm-context";
 import {
   getAllDailyTodos,
@@ -60,21 +61,23 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex bg-page text-content">
         <ToastProvider>
-          <ConfirmProvider>
-            <TagsProvider initialTags={tags}>
-              <TasksProvider
-                initialTasks={tasks}
-                initialTrashedTasks={trashedTasks}
-              >
-                <DailyTodosProvider initialTodos={dailyTodos}>
-                  <Nav />
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    {children}
-                  </div>
-                </DailyTodosProvider>
-              </TasksProvider>
-            </TagsProvider>
-          </ConfirmProvider>
+          <SyncProvider>
+            <ConfirmProvider>
+              <TagsProvider initialTags={tags}>
+                <TasksProvider
+                  initialTasks={tasks}
+                  initialTrashedTasks={trashedTasks}
+                >
+                  <DailyTodosProvider initialTodos={dailyTodos}>
+                    <Nav />
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      {children}
+                    </div>
+                  </DailyTodosProvider>
+                </TasksProvider>
+              </TagsProvider>
+            </ConfirmProvider>
+          </SyncProvider>
         </ToastProvider>
       </body>
     </html>

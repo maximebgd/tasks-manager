@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import type { Tag, TagColor } from "./types";
 import { useToast } from "./toast-context";
+import { useSync } from "./sync-context";
 import {
   createTagAction,
   deleteTagAction,
@@ -42,6 +43,7 @@ export function TagsProvider({
 }) {
   const [tags, setTags] = useState<Tag[]>(initialTags);
   const toast = useToast();
+  const sync = useSync();
 
   const byId = useMemo(() => {
     const map = new Map<string, Tag>();
@@ -50,7 +52,7 @@ export function TagsProvider({
   }, [tags]);
 
   const persist = (run: Promise<unknown>, snapshot: Tag[], errMsg: string) => {
-    run.catch((e) => {
+    sync.track(run).catch((e) => {
       console.error(e);
       setTags(snapshot);
       toast.error(errMsg);
