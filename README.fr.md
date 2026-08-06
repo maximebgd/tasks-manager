@@ -1,0 +1,215 @@
+# Tasks Manager
+
+<p align="center">
+  <a href="./README.md"><img src="https://img.shields.io/badge/🇬🇧_English-555555?style=for-the-badge" alt="English"></a>
+  &nbsp;
+  <a href="./README.fr.md"><img src="https://img.shields.io/badge/🇫🇷_Français-2ea44f?style=for-the-badge" alt="Français"></a>
+</p>
+
+Gestionnaire de tâches full-stack façon « Notion » : un tableau kanban, une todo journalière, un calendrier et une corbeille, avec des notes en Markdown et un mode jour/nuit.
+
+Construit avec **Next.js 16** en full-stack (App Router) : la **lecture** passe par des Server Components, l'**écriture** par des Server Actions, et l'état client est **optimiste avec rollback** (mise à jour instantanée de l'UI, restauration + toast en cas d'échec). La persistance est assurée par **Prisma 6 + PostgreSQL**, le tout conteneurisé (**Docker**, images publiées sur GHCR).
+
+> 💡 **Pourquoi ce projet ?** Je l'ai développé et utilisé pendant mon stage pour m'organiser. Je n'avais pas le droit d'utiliser des outils comme Notion pour des raisons de sécurité et de confidentialité — j'ai donc construit le mien, auto-hébergeable et sous mon contrôle.
+
+![Tasks Manager screenshot](public/screenshot.png)
+
+## Stack
+
+| Couche | Technologie |
+|---|---|
+| Frontend | Next.js 16 (App Router, React 19), TypeScript strict, Tailwind CSS v4 |
+| Backend | Next.js Server Actions (écriture) + Server Components (lecture) |
+| ORM / BDD | Prisma 6 + PostgreSQL 16 |
+| Contenu | react-markdown + remark-gfm (notes en Markdown) |
+| Conteneurisation | Docker + docker-compose (services `web` + `db`), CI de publication GHCR |
+
+## Structure
+
+```
+tasks-manager/
+├── app/
+│   ├── actions/
+│   │   ├── tasks.ts             # Server Actions tâches (create/update/soft-delete/restore/purge/reorder)
+│   │   ├── daily.ts             # Server Actions todo journalière + sous-tâches
+│   │   └── tags.ts              # Server Actions étiquettes (create/update/delete)
+│   ├── components/
+│   │   ├── task-board.tsx       # Tableau kanban (aucune prop, lit useTasks())
+│   │   ├── task-card.tsx        # Carte de tâche (drag & drop)
+│   │   ├── task-peek.tsx        # Aperçu latéral au simple clic
+│   │   ├── task-editor.tsx      # Édition (titre, statut, priorité, échéance, tags, notes)
+│   │   ├── daily-todo.tsx       # Liste journalière + sous-tâches cochables
+│   │   ├── calendar.tsx         # Vues Mois et Semaine
+│   │   ├── trash.tsx            # Corbeille (restaurer / purger)
+│   │   ├── tag-picker.tsx       # Sélecteur d'étiquettes (9 couleurs)
+│   │   ├── markdown.tsx         # Rendu Markdown des notes
+│   │   ├── nav.tsx / theme-toggle.tsx / badges.tsx / add-task-form.tsx
+│   ├── task/[id]/page.tsx       # Fiche pleine page d'une tâche
+│   ├── page.tsx                 # Tableau (/)
+│   ├── daily/page.tsx           # Todo journalière (/daily)
+│   ├── calendar/page.tsx        # Calendrier (/calendar)
+│   ├── trash/page.tsx           # Corbeille (/trash)
+│   ├── layout.tsx               # Providers (Tasks / Tags / Toast) initialisés depuis la BDD
+│   └── globals.css              # Tailwind v4 + tokens sémantiques + mode nuit (.dark)
+├── lib/
+│   ├── data.ts                 # Lectures serveur (getTasks, getTrashedTasks, getTags, getDailyTodos)
+│   ├── tasks-context.tsx       # Store client des tâches (useTasks) — optimiste + rollback
+│   ├── tags-context.tsx        # Store client des étiquettes (useTags)
+│   ├── toast-context.tsx       # Notifications (useToast)
+│   ├── prisma.ts               # Client Prisma (singleton)
+│   ├── types.ts                # Types UI (Task, Tag, DailyTodo, SubTodo, Status, Priority)
+│   ├── date.ts                 # Helpers ISO (todayISO, toISO, daysBetween)
+│   └── mock-data.ts            # Données de démo — uniquement pour le seed
+├── prisma/
+│   ├── schema.prisma           # Task, Tag, DailyTodo, SubTodo
+│   ├── migrations/             # init → soft-delete → table des tags
+│   └── seed.ts                 # Seed idempotent depuis mock-data
+├── docker-compose.yml          # Dev (db seul) / Prod build (web + db)
+├── docker-compose.prod.yml     # Prod pull (web GHCR + db Docker Hub)
+├── Dockerfile                  # Image web (multi-stage)
+└── .github/workflows/docker-publish.yml   # CI : build multi-arch + push GHCR
+```
+
+## Fonctionnalités
+
+- **Tableau kanban (`/`)** — trois colonnes (À faire / En cours / Terminé), réordonnancement en drag & drop (persisté via `position`), filtres par étiquette, priorités et échéances.
+- **Aperçu & fiche** — simple clic = aperçu latéral (peek), double clic = fiche pleine page (`/task/[id]`). Board, peek et fiche partagent le **même store** (`useTasks`).
+- **Todo journalière (`/daily`)** — une liste par jour, cocher une tâche en cliquant sur toute la ligne, sous-tâches cochables, réordonnancement en drag & drop.
+- **Calendrier (`/calendar`)** — vues **Mois** et **Semaine**.
+- **Étiquettes** — entités réutilisables partagées entre tâches, 9 couleurs sémantiques (façon Notion), création / renommage / suppression.
+- **Corbeille (`/trash`)** — suppression douce (`deletedAt`) : restaurer une tâche ou la **purger** définitivement.
+- **Notes en Markdown** — édition et rendu (react-markdown + remark-gfm) sur la fiche de tâche.
+- **Mode jour / nuit** — bascule sans flash au chargement, piloté par la classe `.dark` et des tokens CSS sémantiques.
+- **UI optimiste** — chaque mutation s'applique instantanément puis persiste ; en cas d'échec, l'état est restauré et un **toast** d'erreur s'affiche.
+
+## Lancer le projet
+
+Modèle recommandé en dev : **BDD dans Docker, app en local** (hot reload, aucun rebuild).
+
+```bash
+npm install
+
+npm run db:up        # Postgres dans Docker (= docker compose up -d db)
+npm run db:migrate   # applique les migrations Prisma (1re fois)
+npm run db:seed      # (optionnel) données de démo
+
+npm run dev          # app en local — http://localhost:3000
+```
+
+Scripts utiles : `db:studio` (Prisma Studio), `db:reset` (réinitialise + reseed), `db:down` (arrête la BDD), `db:generate` (client Prisma), `db:deploy` (migrations en prod).
+
+> ⚠️ **Vérification** : type-check avec `npx tsc --noEmit`. Éviter `next build` juste pour vérifier — préférer le serveur `dev`.
+
+## Variables d'environnement
+
+Copier `.env.example` en `.env` pour le dev local. En Docker, la valeur est fournie par `docker-compose.yml`.
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://tasks:tasks@localhost:5432/tasks?schema=public` | **Requis.** Chaîne de connexion PostgreSQL |
+
+## Architecture (Next full-stack)
+
+- **Lecture** — `lib/data.ts` expose `getTasks`, `getTrashedTasks`, `getTags`, `getDailyTodos`, appelées depuis des **Server Components** (`layout` et pages `async`). `toTask()` convertit les lignes Prisma vers les types UI.
+- **Écriture** — **Server Actions** dans `app/actions/*` :
+  - `tasks.ts` — `createTaskAction`, `updateTaskAction`, `softDeleteTaskAction`, `restoreTaskAction`, `purgeTaskAction`, `reorderTasksAction`.
+  - `daily.ts` — CRUD des todos journalières et des sous-tâches + réordonnancement.
+  - `tags.ts` — `createTagAction`, `updateTagAction`, `deleteTagAction`.
+- **État client** — trois providers montés dans le `layout`, **initialisés depuis la BDD** : `TasksProvider` (`useTasks`), `TagsProvider` (`useTags`), `ToastProvider` (`useToast`). `TaskBoard` ne prend **aucune prop**.
+- **Optimiste + rollback** — chaque mutation s'applique localement, puis persiste ; en cas d'échec → restauration de l'état + toast.
+
+### Modèle de données (`prisma/schema.prisma`)
+
+| Modèle | Rôle |
+|---|---|
+| `Task` | Tâche du tableau : `title`, `description`, `status`, `priority`, `dueDate` (ISO `YYYY-MM-DD`), `notes`, `position` (ordre), `deletedAt` (corbeille), relation N-N avec `Tag` |
+| `Tag` | Étiquette réutilisable : `name` (unique), `color` (clé sémantique) |
+| `DailyTodo` | Élément de la todo journalière : `date` (ISO), `title`, `done`, `position` |
+| `SubTodo` | Sous-tâche cochable rattachée à un `DailyTodo` (cascade à la suppression) |
+
+## Les 3 modes de lancement
+
+L'app tourne en **2 conteneurs** : `web` (Next, full-stack) et `db` (Postgres 16). Postgres est toujours **pullé** (image officielle) ; seul `web` a un `Dockerfile`. Les migrations Prisma sont appliquées au démarrage de `web` (`prisma migrate deploy`).
+
+| Mode | Front | BDD | Fichier |
+|---|---|---|---|
+| **1. Dev** | local (`npm run dev`) | Docker (pull) | `docker-compose.yml` (db seul) |
+| **2. Prod (build)** | Docker (**build**) | Docker (pull) | `docker-compose.yml` |
+| **3. Prod (pull)** | Docker (**pull** GHCR) | Docker (pull) | `docker-compose.prod.yml` |
+
+### 1. Dev — front local + BDD dans Docker
+
+Hot reload sur la machine ; seule la BDD tourne dans Docker. (Voir [Lancer le projet](#lancer-le-projet) pour le premier lancement : install, migrations, seed.)
+
+```bash
+npm run db:up   # Postgres dans Docker (service db uniquement)
+npm run dev     # front en local — http://localhost:3000
+```
+
+### 2. Prod (build) — compose *build* le front + *pull* la BDD
+
+Sur une machine qui a le code source : l'image `web` est buildée localement, Postgres est pullé.
+
+```bash
+docker compose up --build -d
+```
+
+### 3. Prod (pull) — compose *pull* le front + *pull* la BDD
+
+Sur un serveur **sans le code source** : les deux images viennent des registres (`web` depuis GHCR, `db` depuis Docker Hub).
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+# TAG épingle une version (défaut : latest)
+TAG=1.2.3 docker compose -f docker-compose.prod.yml up -d
+```
+
+> L'image `web` publiée sur GHCR est **publique** : aucun `docker login` n'est nécessaire pour la pull.
+
+La CI (`.github/workflows/docker-publish.yml`) build l'image `web` en multi-arch (amd64 + arm64) et la pousse sur GHCR à chaque push sur `main` (`:latest`) et sur chaque tag `v*` (`:1.2.3`).
+
+## Schéma
+
+```mermaid
+flowchart TD
+    subgraph CLIENT["🖥️ Client (Composants React)"]
+        direction TB
+        U1([Tableau / Daily / Calendrier / Corbeille])
+        U2([Aperçu peek + fiche /task/&#91;id&#93;])
+        CTX["Stores client (Context)\n─────────────────\nuseTasks · useTags · useToast\nUI optimiste + rollback"]
+    end
+
+    subgraph SERVER["⚙️ Serveur Next.js (App Router)"]
+        direction TB
+        RC["Server Components — lecture\n─────────────────\nlib/data.ts\ngetTasks · getTrashedTasks\ngetTags · getDailyTodos"]
+        SA["Server Actions — écriture\n─────────────────\napp/actions/*\ntasks · daily · tags"]
+    end
+
+    subgraph DATA["🗄️ Persistance"]
+        direction TB
+        PR["Prisma 6\n─────────────────\nlib/prisma.ts (singleton)\nschema.prisma"]
+        DB[("PostgreSQL 16\nTask · Tag · DailyTodo · SubTodo")]
+    end
+
+    %% Initialisation (lecture)
+    RC -->|"props initiales"| CTX
+    RC -->|"findMany"| PR
+
+    %% Rendu
+    CTX --> U1
+    CTX --> U2
+
+    %% Mutations (écriture optimiste)
+    U1 -->|"mutation"| CTX
+    U2 -->|"mutation"| CTX
+    CTX -.->|"applique en local puis appelle"| SA
+    SA -->|"create / update / delete"| PR
+    SA -.->|"échec → rollback + toast"| CTX
+
+    PR <--> DB
+
+    %% Styles
+    style CLIENT fill:#1e293b,color:#e2e8f0,stroke:#3b82f6
+    style SERVER fill:#0f172a,color:#e2e8f0,stroke:#10b981
+    style DATA fill:#1c1917,color:#fde68a,stroke:#f59e0b
+```

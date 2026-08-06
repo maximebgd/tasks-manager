@@ -1,84 +1,215 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tasks Manager
 
-## Getting Started
+<p align="center">
+  <a href="./README.md"><img src="https://img.shields.io/badge/🇬🇧_English-2ea44f?style=for-the-badge" alt="English"></a>
+  &nbsp;
+  <a href="./README.fr.md"><img src="https://img.shields.io/badge/🇫🇷_Français-555555?style=for-the-badge" alt="Français"></a>
+</p>
 
-First, run the development server:
+A full-stack, Notion-style task manager: a kanban board, a daily to-do list, a calendar and a trash bin, with Markdown notes and a light/dark theme.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Built with **Next.js 16** as a full-stack app (App Router): **reads** go through Server Components, **writes** through Server Actions, and client state is **optimistic with rollback** (the UI updates instantly, then restores state + shows a toast on failure). Persistence is handled by **Prisma 6 + PostgreSQL**, all containerized (**Docker**, images published to GHCR).
+
+> 💡 **Why this project?** I built and used it during my internship to stay organized. I wasn't allowed to use tools like Notion for security and confidentiality reasons — so I built my own, self-hostable and fully under my control.
+
+![Tasks Manager screenshot](public/screenshot.png)
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16 (App Router, React 19), strict TypeScript, Tailwind CSS v4 |
+| Backend | Next.js Server Actions (writes) + Server Components (reads) |
+| ORM / DB | Prisma 6 + PostgreSQL 16 |
+| Content | react-markdown + remark-gfm (Markdown notes) |
+| Containerization | Docker + docker-compose (`web` + `db` services), GHCR publish CI |
+
+## Structure
+
+```
+tasks-manager/
+├── app/
+│   ├── actions/
+│   │   ├── tasks.ts             # Task Server Actions (create/update/soft-delete/restore/purge/reorder)
+│   │   ├── daily.ts             # Daily to-do + subtasks Server Actions
+│   │   └── tags.ts              # Tag Server Actions (create/update/delete)
+│   ├── components/
+│   │   ├── task-board.tsx       # Kanban board (no props, reads useTasks())
+│   │   ├── task-card.tsx        # Task card (drag & drop)
+│   │   ├── task-peek.tsx        # Side peek on single click
+│   │   ├── task-editor.tsx      # Editing (title, status, priority, due date, tags, notes)
+│   │   ├── daily-todo.tsx       # Daily list + checkable subtasks
+│   │   ├── calendar.tsx         # Month and Week views
+│   │   ├── trash.tsx            # Trash (restore / purge)
+│   │   ├── tag-picker.tsx       # Tag picker (9 colors)
+│   │   ├── markdown.tsx         # Markdown rendering for notes
+│   │   ├── nav.tsx / theme-toggle.tsx / badges.tsx / add-task-form.tsx
+│   ├── task/[id]/page.tsx       # Full-page task detail
+│   ├── page.tsx                 # Board (/)
+│   ├── daily/page.tsx           # Daily to-do (/daily)
+│   ├── calendar/page.tsx        # Calendar (/calendar)
+│   ├── trash/page.tsx           # Trash (/trash)
+│   ├── layout.tsx               # Providers (Tasks / Tags / Toast) initialized from the DB
+│   └── globals.css              # Tailwind v4 + semantic tokens + dark mode (.dark)
+├── lib/
+│   ├── data.ts                 # Server reads (getTasks, getTrashedTasks, getTags, getDailyTodos)
+│   ├── tasks-context.tsx       # Client task store (useTasks) — optimistic + rollback
+│   ├── tags-context.tsx        # Client tag store (useTags)
+│   ├── toast-context.tsx       # Notifications (useToast)
+│   ├── prisma.ts               # Prisma client (singleton)
+│   ├── types.ts                # UI types (Task, Tag, DailyTodo, SubTodo, Status, Priority)
+│   ├── date.ts                 # ISO helpers (todayISO, toISO, daysBetween)
+│   └── mock-data.ts            # Demo data — used only for seeding
+├── prisma/
+│   ├── schema.prisma           # Task, Tag, DailyTodo, SubTodo
+│   ├── migrations/             # init → soft-delete → tags table
+│   └── seed.ts                 # Idempotent seed from mock-data
+├── docker-compose.yml          # Dev (db only) / Prod build (web + db)
+├── docker-compose.prod.yml     # Prod pull (web from GHCR + db from Docker Hub)
+├── Dockerfile                  # web image (multi-stage)
+└── .github/workflows/docker-publish.yml   # CI: multi-arch build + push to GHCR
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Kanban board (`/`)** — three columns (To do / In progress / Done), drag-and-drop reordering (persisted via `position`), filtering by tag, priorities and due dates.
+- **Peek & detail** — single click = side peek, double click = full-page detail (`/task/[id]`). Board, peek and detail share the **same store** (`useTasks`).
+- **Daily to-do (`/daily`)** — one list per day, check a task by clicking anywhere on its row, checkable subtasks, drag-and-drop reordering.
+- **Calendar (`/calendar`)** — **Month** and **Week** views.
+- **Tags** — reusable entities shared across tasks, 9 semantic colors (Notion-style), create / rename / delete.
+- **Trash (`/trash`)** — soft delete (`deletedAt`): restore a task or **purge** it permanently.
+- **Markdown notes** — editing and rendering (react-markdown + remark-gfm) on the task detail page.
+- **Light / dark mode** — no flash on load, driven by the `.dark` class and semantic CSS tokens.
+- **Optimistic UI** — each mutation applies instantly then persists; on failure, state is restored and an error **toast** is shown.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Getting started
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Déploiement Docker
-
-L'app tourne en **2 conteneurs** : `web` (Next, fullstack — front + Server Actions) et `db` (Postgres 16). Postgres est toujours l'image officielle **pullée** ; seul `web` a un `Dockerfile`. Les migrations Prisma sont appliquées au démarrage de `web` (`prisma migrate deploy`).
-
-Trois modes selon le contexte :
-
-### 1. Dev — front local + BDD dans Docker
-
-Front en hot-reload sur la machine, seule la BDD tourne dans Docker.
+Recommended dev setup: **DB in Docker, app running locally** (hot reload, no rebuild).
 
 ```bash
-npm run db:up   # = docker compose up -d db  (lance UNIQUEMENT le service db)
-npm run dev     # front en local, se connecte à la BDD via localhost:5432
+npm install
+
+npm run db:up        # Postgres in Docker (= docker compose up -d db)
+npm run db:migrate   # apply Prisma migrations (first time)
+npm run db:seed      # (optional) demo data
+
+npm run dev          # app locally — http://localhost:3000
 ```
 
-### 2. Prod (build) — compose qui *build* le front + *pull* la BDD
+Handy scripts: `db:studio` (Prisma Studio), `db:reset` (reset + reseed), `db:down` (stop the DB), `db:generate` (Prisma client), `db:deploy` (migrations in prod).
 
-Sur une machine qui a le code source. Build l'image `web` en local, pull Postgres.
+> ⚠️ **Verifying**: type-check with `npx tsc --noEmit`. Avoid `next build` just to verify — prefer the `dev` server.
+
+## Environment variables
+
+Copy `.env.example` to `.env` for local dev. In Docker, the value is provided by `docker-compose.yml`.
+
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://tasks:tasks@localhost:5432/tasks?schema=public` | **Required.** PostgreSQL connection string |
+
+## Architecture (Next full-stack)
+
+- **Reads** — `lib/data.ts` exposes `getTasks`, `getTrashedTasks`, `getTags`, `getDailyTodos`, called from **Server Components** (`layout` and `async` pages). `toTask()` converts Prisma rows to UI types.
+- **Writes** — **Server Actions** in `app/actions/*`:
+  - `tasks.ts` — `createTaskAction`, `updateTaskAction`, `softDeleteTaskAction`, `restoreTaskAction`, `purgeTaskAction`, `reorderTasksAction`.
+  - `daily.ts` — CRUD for daily to-dos and subtasks + reordering.
+  - `tags.ts` — `createTagAction`, `updateTagAction`, `deleteTagAction`.
+- **Client state** — three providers mounted in `layout`, **initialized from the DB**: `TasksProvider` (`useTasks`), `TagsProvider` (`useTags`), `ToastProvider` (`useToast`). `TaskBoard` takes **no props**.
+- **Optimistic + rollback** — each mutation applies locally, then persists; on failure → state restore + toast.
+
+### Data model (`prisma/schema.prisma`)
+
+| Model | Role |
+|---|---|
+| `Task` | Board task: `title`, `description`, `status`, `priority`, `dueDate` (ISO `YYYY-MM-DD`), `notes`, `position` (order), `deletedAt` (trash), N-N relation with `Tag` |
+| `Tag` | Reusable label: `name` (unique), `color` (semantic key) |
+| `DailyTodo` | Daily to-do item: `date` (ISO), `title`, `done`, `position` |
+| `SubTodo` | Checkable subtask attached to a `DailyTodo` (cascade on delete) |
+
+## The 3 launch modes
+
+The app runs as **2 containers**: `web` (Next, full-stack) and `db` (Postgres 16). Postgres is always **pulled** (official image); only `web` has a `Dockerfile`. Prisma migrations are applied when `web` starts (`prisma migrate deploy`).
+
+| Mode | Front | DB | File |
+|---|---|---|---|
+| **1. Dev** | local (`npm run dev`) | Docker (pull) | `docker-compose.yml` (db only) |
+| **2. Prod (build)** | Docker (**build**) | Docker (pull) | `docker-compose.yml` |
+| **3. Prod (pull)** | Docker (**pull** GHCR) | Docker (pull) | `docker-compose.prod.yml` |
+
+### 1. Dev — front local + DB in Docker
+
+Hot reload on the machine; only the DB runs in Docker. (See [Getting started](#getting-started) for the first run: install, migrations, seed.)
+
+```bash
+npm run db:up   # Postgres in Docker (db service only)
+npm run dev     # front locally — http://localhost:3000
+```
+
+### 2. Prod (build) — compose *builds* the front + *pulls* the DB
+
+On a machine that has the source code: the `web` image is built locally, Postgres is pulled.
 
 ```bash
 docker compose up --build -d
 ```
 
-App sur http://localhost:3000, Postgres exposé sur `5432` (outillage local).
+### 3. Prod (pull) — compose *pulls* the front + *pulls* the DB
 
-### 3. Prod (pull) — compose qui *pull* le front + *pull* la BDD
-
-Sur un serveur **sans le code source** : les deux images viennent des registres (GHCR + Docker Hub). Fichier dédié `docker-compose.prod.yml` (aucun `build:`).
+On a server **without the source code**: both images come from registries (`web` from GHCR, `db` from Docker Hub).
 
 ```bash
-docker login ghcr.io                                   # 1re fois (package GHCR privé par défaut)
-docker compose -f docker-compose.prod.yml pull         # pull web (GHCR) + db (Docker Hub)
 docker compose -f docker-compose.prod.yml up -d
-```
-
-`TAG` épingle une version (défaut : `latest`) :
-
-```bash
+# TAG pins a version (default: latest)
 TAG=1.2.3 docker compose -f docker-compose.prod.yml up -d
 ```
 
-### Publication de l'image (CI)
+> The `web` image published on GHCR is **public**: no `docker login` is needed to pull it.
 
-Le workflow `.github/workflows/docker-publish.yml` build et pousse l'image `web` sur GHCR à chaque push sur `main` et sur chaque tag `v*` :
+The CI (`.github/workflows/docker-publish.yml`) builds the `web` image multi-arch (amd64 + arm64) and pushes it to GHCR on every push to `main` (`:latest`) and every `v*` tag (`:1.2.3`).
 
-- `ghcr.io/maximebgd/tasks-manager:latest` (dernier `main`)
-- `ghcr.io/maximebgd/tasks-manager:1.2.3` (tag git `v1.2.3`)
+## Schema
 
-| Mode | Front | BDD | Fichier |
-|---|---|---|---|
-| Dev | local (`npm run dev`) | Docker (pull) | `docker-compose.yml` (db seul) |
-| Prod (build) | Docker (**build**) | Docker (pull) | `docker-compose.yml` |
-| Prod (pull) | Docker (**pull** GHCR) | Docker (pull) | `docker-compose.prod.yml` |
+```mermaid
+flowchart TD
+    subgraph CLIENT["🖥️ Client (React components)"]
+        direction TB
+        U1([Board / Daily / Calendar / Trash])
+        U2([Peek + detail /task/&#91;id&#93;])
+        CTX["Client stores (Context)\n─────────────────\nuseTasks · useTags · useToast\nOptimistic UI + rollback"]
+    end
+
+    subgraph SERVER["⚙️ Next.js server (App Router)"]
+        direction TB
+        RC["Server Components — reads\n─────────────────\nlib/data.ts\ngetTasks · getTrashedTasks\ngetTags · getDailyTodos"]
+        SA["Server Actions — writes\n─────────────────\napp/actions/*\ntasks · daily · tags"]
+    end
+
+    subgraph DATA["🗄️ Persistence"]
+        direction TB
+        PR["Prisma 6\n─────────────────\nlib/prisma.ts (singleton)\nschema.prisma"]
+        DB[("PostgreSQL 16\nTask · Tag · DailyTodo · SubTodo")]
+    end
+
+    %% Initialization (read)
+    RC -->|"initial props"| CTX
+    RC -->|"findMany"| PR
+
+    %% Render
+    CTX --> U1
+    CTX --> U2
+
+    %% Mutations (optimistic write)
+    U1 -->|"mutation"| CTX
+    U2 -->|"mutation"| CTX
+    CTX -.->|"apply locally then call"| SA
+    SA -->|"create / update / delete"| PR
+    SA -.->|"failure → rollback + toast"| CTX
+
+    PR <--> DB
+
+    %% Styles
+    style CLIENT fill:#1e293b,color:#e2e8f0,stroke:#3b82f6
+    style SERVER fill:#0f172a,color:#e2e8f0,stroke:#10b981
+    style DATA fill:#1c1917,color:#fde68a,stroke:#f59e0b
+```
