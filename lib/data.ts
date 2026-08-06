@@ -52,9 +52,11 @@ export async function getTrashedTasks(): Promise<Task[]> {
   return rows.map(toTask);
 }
 
-/** Toutes les étiquettes, triées par nom (ordre FR). */
+/** Toutes les étiquettes, dans l'ordre d'affichage (drag & drop), puis par nom. */
 export async function getTags(): Promise<Tag[]> {
-  const rows = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+  const rows = await prisma.tag.findMany({
+    orderBy: [{ position: "asc" }, { name: "asc" }],
+  });
   return rows.map((r) => ({
     id: r.id,
     name: r.name,

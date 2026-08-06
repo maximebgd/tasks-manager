@@ -10,11 +10,11 @@ const prisma = new PrismaClient();
 async function main() {
   // Upsert par `name` (unique) : réutilise les étiquettes déjà présentes
   // (ex. créées par la migration) et applique la couleur voulue.
-  for (const tag of mockTags) {
+  for (const [i, tag] of mockTags.entries()) {
     await prisma.tag.upsert({
       where: { name: tag.name },
-      update: { color: tag.color },
-      create: { id: tag.id, name: tag.name, color: tag.color },
+      update: { color: tag.color, position: i },
+      create: { id: tag.id, name: tag.name, color: tag.color, position: i },
     });
   }
 

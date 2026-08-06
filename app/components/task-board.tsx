@@ -30,7 +30,7 @@ function byDueDateAsc(a: Task, b: Task) {
 export function TaskBoard() {
   const router = useRouter();
   const { tasks, addTask, updateTask, deleteTask, reorderTasks } = useTasks();
-  const { tags: allTagDefs } = useTags();
+  const { tags: allTagDefs, reorderTags } = useTags();
   const [query, setQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -39,6 +39,8 @@ export function TaskBoard() {
   const [peekId, setPeekId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<Status | null>(null);
+  const [draggingTagId, setDraggingTagId] = useState<string | null>(null);
+  const [dragOverTagId, setDragOverTagId] = useState<string | null>(null);
   const [dropIndicator, setDropIndicator] = useState<{
     id: string;
     position: "before" | "after";
@@ -97,19 +99,32 @@ export function TaskBoard() {
     [allTagDefs],
   );
 
-  // Étiquettes réellement utilisées par des tâches, triées (ordre FR).
+  // Étiquettes réellement utilisées par des tâches, dans l'ordre d'affichage
+  // (position). `allTagDefs` est déjà trié par position via getTags.
   const usedTags = useMemo(() => {
     const used = new Set<string>();
     tasks.forEach((t) => t.tagIds.forEach((id) => used.add(id)));
-    return allTagDefs
-      .filter((t) => used.has(t.id))
-      .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    return allTagDefs.filter((t) => used.has(t.id));
   }, [tasks, allTagDefs]);
 
   function toggleTag(id: string) {
     setSelectedTagIds((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
     );
+  }
+
+  // Déplace une étiquette juste avant `targetId` dans l'ordre global, puis
+  // persiste les positions. Le drag se fait sur la liste visible (usedTags),
+  // mais on réordonne `allTagDefs` complet pour garder un ordre cohérent.
+  function moveTag(targetId: string) {
+    if (!draggingTagId || draggingTagId === targetId) return setDraggingTagId(null);
+    const next = allTagDefs.filter((t) => t.id !== draggingTagId);
+    const dragged = allTagDefs.find((t) => t.id === draggingTagId);
+    const targetIndex = next.findIndex((t) => t.id === targetId);
+    if (!dragged || targetIndex === -1) return setDraggingTagId(null);
+    next.splice(targetIndex, 0, dragged);
+    reorderTags(next);
+    setDraggingTagId(null);
   }
 
   const filtered = useMemo(() => {
@@ -217,23 +232,59 @@ export function TaskBoard() {
       </div>
 
       {usedTags.length > 0 && (
-        <div className="mb-6 flex flex-wrap items-center gap-1.5">
+        <div className="mb-6 flex flex-wrap items-center gap-y-1.5">
           <span className="mr-1 text-xs font-medium text-faint">Tags</span>
           {usedTags.map((tag) => {
             const active = selectedTagIds.includes(tag.id);
+            const isDragging = draggingTagId === tag.id;
+            const isDropTarget = dragOverTagId === tag.id && !isDragging;
             return (
-              <button
-                key={tag.id}
-                onClick={() => toggleTag(tag.id)}
-                aria-pressed={active}
-                className={`rounded px-2 py-0.5 text-xs font-medium transition ${
-                  active
-                    ? "bg-accent text-white"
-                    : `${tagColorClass[tag.color]} hover:opacity-80`
-                }`}
-              >
-                {tag.name}
-              </button>
+              <span key={tag.id} className="flex items-center gap-1">
+                {/* Barre d'insertion : le tag glissé se pose avant cette pastille. */}
+                <span
+                  aria-hidden
+                  className={`h-4 w-0.5 rounded-full transition ${
+                    isDropTarget ? "bg-accent" : "bg-transparent"
+                  }`}
+                />
+                <button
+                  draggable
+                  onClick={() => toggleTag(tag.id)}
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    setDraggingTagId(tag.id);
+                  }}
+                  onDragEnd={() => {
+                    setDraggingTagId(null);
+                    setDragOverTagId(null);
+                  }}
+                  onDragOver={(e) => {
+                    if (!draggingTagId || draggingTagId === tag.id) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    setDragOverTagId(tag.id);
+                  }}
+                  onDragLeave={() =>
+                    setDragOverTagId((id) => (id === tag.id ? null : id))
+                  }
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOverTagId(null);
+                    moveTag(tag.id);
+                  }}
+                  aria-pressed={active}
+                  title="Glisser pour réordonner"
+                  className={`cursor-grab rounded px-2 py-0.5 text-xs font-medium transition active:cursor-grabbing ${
+                    isDragging ? "opacity-40" : ""
+                  } ${
+                    active
+                      ? "bg-accent text-white"
+                      : `${tagColorClass[tag.color]} hover:opacity-80`
+                  }`}
+                >
+                  {tag.name}
+                </button>
+              </span>
             );
           })}
           {selectedTagIds.length > 0 && (

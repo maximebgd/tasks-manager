@@ -11,8 +11,15 @@ export async function createTagAction(input: {
   name: string;
   color: TagColor;
 }) {
+  // Nouvelle étiquette ajoutée en fin de liste (position = nb d'étiquettes).
+  const position = await prisma.tag.count();
   await prisma.tag.create({
-    data: { id: input.id, name: input.name, color: input.color },
+    data: {
+      id: input.id,
+      name: input.name,
+      color: input.color,
+      position,
+    },
   });
 }
 
@@ -29,4 +36,18 @@ export async function updateTagAction(
 /** Supprime une étiquette ; les liens tâche↔étiquette partent en cascade. */
 export async function deleteTagAction(id: string) {
   await prisma.tag.delete({ where: { id } });
+}
+
+/** Renumérote l'ordre d'affichage des étiquettes (drag & drop). */
+export async function reorderTagsAction(
+  items: { id: string; position: number }[],
+) {
+  await prisma.$transaction(
+    items.map((it) =>
+      prisma.tag.update({
+        where: { id: it.id },
+        data: { position: it.position },
+      }),
+    ),
+  );
 }

@@ -6,6 +6,7 @@ import { useToast } from "./toast-context";
 import {
   createTagAction,
   deleteTagAction,
+  reorderTagsAction,
   updateTagAction,
 } from "@/app/actions/tags";
 
@@ -19,6 +20,8 @@ type TagsContextValue = {
   updateTag: (id: string, patch: { name?: string; color?: TagColor }) => void;
   /** Supprime une étiquette (retirée de toutes les tâches) + persiste. */
   deleteTag: (id: string) => void;
+  /** Remplace l'ordre complet des étiquettes (drag & drop) + persiste. */
+  reorderTags: (next: Tag[]) => void;
 };
 
 const TagsContext = createContext<TagsContextValue | null>(null);
@@ -88,9 +91,19 @@ export function TagsProvider({
     );
   };
 
+  const reorderTags = (next: Tag[]) => {
+    const snapshot = tags;
+    setTags(next);
+    persist(
+      reorderTagsAction(next.map((t, i) => ({ id: t.id, position: i }))),
+      snapshot,
+      "Impossible de réordonner les étiquettes",
+    );
+  };
+
   return (
     <TagsContext.Provider
-      value={{ tags, getTag, addTag, updateTag, deleteTag }}
+      value={{ tags, getTag, addTag, updateTag, deleteTag, reorderTags }}
     >
       {children}
     </TagsContext.Provider>

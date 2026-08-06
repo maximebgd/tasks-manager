@@ -49,8 +49,11 @@ model Tag {
   id        String   @id @default(cuid())
   name      String   @unique
   color     String   @default("blue")
+  position  Int      @default(0) // ordre d'affichage (drag & drop)
   tasks     Task[]
   createdAt DateTime @default(now())
+
+  @@index([position])
 }
 
 /// Élément d'une todo journalière (/daily), avec ses sous-tâches.
