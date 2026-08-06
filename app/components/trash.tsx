@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useTasks } from "@/lib/tasks-context";
 import { useTags } from "@/lib/tags-context";
 import { useConfirm } from "@/lib/confirm-context";
 import { PriorityBadge, Tag } from "./badges";
+import { TrashPeek } from "./trash-peek";
 
 // Date + heure lisibles de mise à la corbeille (« 4 août à 21:07 »).
 function formatDeletedAt(iso: string) {
@@ -21,6 +23,8 @@ export function Trash() {
   const { trashedTasks, restoreTask, purgeTask } = useTasks();
   const { getTag } = useTags();
   const confirm = useConfirm();
+  // Id de la tâche dont on affiche l'aperçu (lecture seule), ou null.
+  const [peekId, setPeekId] = useState<string | null>(null);
 
   async function emptyTrash() {
     const ok = await confirm({
@@ -81,8 +85,12 @@ export function Trash() {
               key={t.id}
               className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface px-3.5 py-3 shadow-card transition duration-200 ease-smooth hover:shadow-lift"
             >
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-medium text-content">
+              <button
+                type="button"
+                onClick={() => setPeekId(t.id)}
+                className="min-w-0 flex-1 cursor-pointer text-left"
+              >
+                <h3 className="truncate text-sm font-medium text-content transition hover:text-accent-text">
                   {t.title}
                 </h3>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -99,7 +107,7 @@ export function Trash() {
                     </span>
                   )}
                 </div>
-              </div>
+              </button>
 
               <div className="flex shrink-0 items-center gap-2">
                 <button
@@ -126,6 +134,10 @@ export function Trash() {
             </li>
           ))}
         </ul>
+      )}
+
+      {peekId && (
+        <TrashPeek taskId={peekId} onClose={() => setPeekId(null)} />
       )}
     </div>
   );
