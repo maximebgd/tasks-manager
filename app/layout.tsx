@@ -50,7 +50,7 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-full flex flex-col bg-page text-content">
+      <body className="min-h-full flex bg-page text-content">
         <ToastProvider>
           <TagsProvider initialTags={tags}>
             <TasksProvider
@@ -58,7 +58,7 @@ export default async function RootLayout({
               initialTrashedTasks={trashedTasks}
             >
               <Nav />
-              {children}
+              <div className="flex min-w-0 flex-1 flex-col">{children}</div>
             </TasksProvider>
           </TagsProvider>
         </ToastProvider>
