@@ -10,6 +10,7 @@ import { tagColorClass } from "./badges";
 import { TaskCard } from "./task-card";
 import { AddTaskForm } from "./add-task-form";
 import { TaskPeek } from "./task-peek";
+import { TagManager } from "./tag-manager";
 
 type PriorityFilter = Priority | "all";
 
@@ -231,7 +232,7 @@ export function TaskBoard() {
         </div>
       </div>
 
-      {usedTags.length > 0 && (
+      {allTagDefs.length > 0 && (
         <div className="mb-6 flex flex-wrap items-center gap-y-1.5">
           <span className="mr-1 text-xs font-medium text-faint">Tags</span>
           {usedTags.map((tag) => {
@@ -295,6 +296,9 @@ export function TaskBoard() {
               Effacer
             </button>
           )}
+          <div className="ml-2">
+            <TagManager />
+          </div>
         </div>
       )}
 
