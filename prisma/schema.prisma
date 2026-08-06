@@ -65,8 +65,10 @@ model DailyTodo {
   position  Int       @default(0)
   subtasks  SubTodo[]
   createdAt DateTime  @default(now())
+  deletedAt DateTime? // corbeille (soft delete) : null = active
 
   @@index([date, position])
+  @@index([deletedAt])
 }
 
 /// Sous-tâche cochable rattachée à une todo journalière.
@@ -77,6 +79,8 @@ model SubTodo {
   position    Int       @default(0)
   dailyTodo   DailyTodo @relation(fields: [dailyTodoId], references: [id], onDelete: Cascade)
   dailyTodoId String
+  deletedAt   DateTime? // corbeille (soft delete) : null = active
 
   @@index([dailyTodoId, position])
+  @@index([deletedAt])
 }

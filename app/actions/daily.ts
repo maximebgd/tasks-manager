@@ -9,7 +9,9 @@ export async function createDailyTodoAction(input: {
   date: string;
   title: string;
 }) {
-  const position = await prisma.dailyTodo.count({ where: { date: input.date } });
+  const position = await prisma.dailyTodo.count({
+    where: { date: input.date, deletedAt: null },
+  });
   await prisma.dailyTodo.create({
     data: {
       id: input.id,
@@ -25,8 +27,21 @@ export async function setDailyTodoDoneAction(id: string, done: boolean) {
   await prisma.dailyTodo.update({ where: { id }, data: { done } });
 }
 
-export async function deleteDailyTodoAction(id: string) {
-  // Les sous-tâches sont supprimées en cascade (onDelete: Cascade).
+/** Met la todo journalière à la corbeille (soft delete) : renseigne `deletedAt`. */
+export async function softDeleteDailyTodoAction(id: string) {
+  await prisma.dailyTodo.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+}
+
+/** Restaure une todo journalière depuis la corbeille : efface `deletedAt`. */
+export async function restoreDailyTodoAction(id: string) {
+  await prisma.dailyTodo.update({ where: { id }, data: { deletedAt: null } });
+}
+
+/** Supprime définitivement une todo journalière (irréversible, cascade sous-tâches). */
+export async function purgeDailyTodoAction(id: string) {
   await prisma.dailyTodo.delete({ where: { id } });
 }
 
@@ -36,7 +51,7 @@ export async function createSubtaskAction(input: {
   title: string;
 }) {
   const position = await prisma.subTodo.count({
-    where: { dailyTodoId: input.dailyTodoId },
+    where: { dailyTodoId: input.dailyTodoId, deletedAt: null },
   });
   await prisma.subTodo.create({
     data: {
@@ -53,7 +68,18 @@ export async function setSubtaskDoneAction(id: string, done: boolean) {
   await prisma.subTodo.update({ where: { id }, data: { done } });
 }
 
-export async function deleteSubtaskAction(id: string) {
+/** Met la sous-tâche à la corbeille (soft delete) : renseigne `deletedAt`. */
+export async function softDeleteSubtaskAction(id: string) {
+  await prisma.subTodo.update({ where: { id }, data: { deletedAt: new Date() } });
+}
+
+/** Restaure une sous-tâche depuis la corbeille : efface `deletedAt`. */
+export async function restoreSubtaskAction(id: string) {
+  await prisma.subTodo.update({ where: { id }, data: { deletedAt: null } });
+}
+
+/** Supprime définitivement une sous-tâche (irréversible). */
+export async function purgeSubtaskAction(id: string) {
   await prisma.subTodo.delete({ where: { id } });
 }
 

@@ -64,7 +64,13 @@ export async function getTags(): Promise<Tag[]> {
   }));
 }
 
-export async function getDailyTodos(): Promise<DailyTodo[]> {
+/**
+ * Toutes les todos journalières avec toutes leurs sous-tâches, y compris celles
+ * à la corbeille (`deletedAt` renseigné). Le `DailyTodosProvider` en dérive les
+ * vues actives et corbeille (une sous-tâche peut être supprimée seule alors que
+ * sa todo parente est encore active).
+ */
+export async function getAllDailyTodos(): Promise<DailyTodo[]> {
   const rows = await prisma.dailyTodo.findMany({
     orderBy: { position: "asc" },
     include: { subtasks: { orderBy: { position: "asc" } } },
@@ -74,10 +80,12 @@ export async function getDailyTodos(): Promise<DailyTodo[]> {
     date: r.date,
     title: r.title,
     done: r.done,
+    deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
     subtasks: r.subtasks.map((s) => ({
       id: s.id,
       title: s.title,
       done: s.done,
+      deletedAt: s.deletedAt ? s.deletedAt.toISOString() : null,
     })),
   }));
 }

@@ -54,6 +54,8 @@ export interface SubTodo {
   id: string;
   title: string;
   done: boolean;
+  /** Date ISO de mise à la corbeille (soft delete), ou null si active. */
+  deletedAt?: string | null;
 }
 
 /** Élément d'une todo journalière : une liste simple par jour. */
@@ -65,6 +67,8 @@ export interface DailyTodo {
   done: boolean;
   /** Sous-tâches optionnelles, affichées en puces sous la tâche. */
   subtasks: SubTodo[];
+  /** Date ISO de mise à la corbeille (soft delete), ou null si active. */
+  deletedAt?: string | null;
 }
 
 export const STATUSES: { value: Status; label: string }[] = [
