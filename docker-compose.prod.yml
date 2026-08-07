@@ -7,8 +7,8 @@
 # TAG épingle la version de l'app (défaut : latest) :
 #   TAG=1.2.0 docker compose -f docker-compose.prod.yml up -d
 #
-# Note : le package GHCR étant privé par défaut, un `docker login ghcr.io`
-# est nécessaire au préalable (ou rendre le package public sur GitHub).
+# Note : le package `web` est public sur GHCR — aucun `docker login ghcr.io`
+# n'est nécessaire pour le pull.
 
 services:
   db:

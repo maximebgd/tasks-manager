@@ -33,6 +33,7 @@ async function main() {
         tags: { connect: t.tagNames.map((name) => ({ name })) },
         notes: t.notes,
         position: i,
+        deletedAt: t.deletedAt ? new Date(t.deletedAt) : null,
       },
     });
   }
@@ -47,20 +48,26 @@ async function main() {
         title: d.title,
         done: d.done,
         position: i,
+        deletedAt: d.deletedAt ? new Date(d.deletedAt) : null,
         subtasks: {
           create: d.subtasks.map((s, j) => ({
             id: s.id,
             title: s.title,
             done: s.done,
             position: j,
+            deletedAt: s.deletedAt ? new Date(s.deletedAt) : null,
           })),
         },
       },
     });
   }
 
+  const trashedTasks = mockTasks.filter((t) => t.deletedAt).length;
+  const trashedDaily = mockDailyTodos.filter((d) => d.deletedAt).length;
   console.log(
-    `Seed OK : ${mockTasks.length} tâches, ${mockDailyTodos.length} todos journalières.`,
+    `Seed OK : ${mockTags.length} étiquettes, ${mockTasks.length} tâches ` +
+      `(dont ${trashedTasks} à la corbeille), ${mockDailyTodos.length} todos ` +
+      `journalières (dont ${trashedDaily} à la corbeille).`,
   );
 }
 

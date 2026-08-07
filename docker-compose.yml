@@ -18,10 +18,14 @@ services:
       retries: 10
 
   web:
-    # `docker compose build` / `up --build` construit en local et tague l'image
-    # sous ce nom. `docker compose pull` récupère l'image publiée par la CI (GHCR).
-    # TAG permet d'épingler une version : `TAG=1.2.0 docker compose up`.
-    image: ghcr.io/maximebgd/tasks-manager:${TAG:-latest}
+    # Mode LOCAL (défaut) : l'image web est CONSTRUITE depuis le Dockerfile et
+    # taguée `local/tasks-manager`. La BDD (service `db`) est, elle, toujours pull.
+    #   docker compose build        → construit local/tasks-manager:latest
+    #   docker compose up           → build local + run (db pull)
+    # Pour tirer l'image publiée sur GHCR à la place (aucun build), voir
+    # docker-compose.prod.yml.
+    # TAG épingle une version : `TAG=1.2.0 docker compose up`.
+    image: local/tasks-manager:${TAG:-latest}
     build: .
     restart: unless-stopped
     depends_on:

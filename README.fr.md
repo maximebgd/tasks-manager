@@ -68,7 +68,7 @@ tasks-manager/
 │   ├── schema.prisma           # Task, Tag, DailyTodo, SubTodo
 │   ├── migrations/             # init → soft-delete → table des tags
 │   └── seed.ts                 # Seed idempotent depuis mock-data
-├── docker-compose.yml          # Dev (db seul) / Prod build (web + db)
+├── docker-compose.yml          # Dev (db seul) / build soi-même (web local + db)
 ├── docker-compose.prod.yml     # Prod pull (web GHCR + db Docker Hub)
 ├── Dockerfile                  # Image web (multi-stage)
 └── .github/workflows/docker-publish.yml   # CI : build multi-arch + push GHCR
@@ -87,9 +87,33 @@ tasks-manager/
 - **UI optimiste** — chaque mutation s'applique instantanément puis persiste ; en cas d'échec, l'état est restauré et un **toast** d'erreur s'affiche.
 - **Serveur MCP (optionnel)** — connecte ton propre LLM (Claude Desktop, LM Studio, Ollama…) via l'endpoint `/api/mcp` pour lire et modifier tâches, étiquettes et todos journalières. Configuration sur la page `/settings/mcp`.
 
-## Lancer le projet
+## Variables d'environnement
 
-Modèle recommandé en dev : **BDD dans Docker, app en local** (hot reload, aucun rebuild).
+Copier `.env.example` en `.env` pour le dev local. En Docker, la valeur est fournie par `docker-compose.yml`.
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://tasks:tasks@localhost:5432/tasks?schema=public` | **Requis.** Chaîne de connexion PostgreSQL |
+| `MCP_TOKEN` | _(vide)_ | Token d'accès de l'endpoint MCP (`/api/mcp`). Sans lui, l'endpoint reste inactif. Génère-le avec `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
+
+## Les 3 modes de lancement
+
+L'app tourne en **2 conteneurs** : `web` (Next, full-stack) et `db` (Postgres 16). Postgres est toujours **pullé** (image officielle) ; seul `web` a un `Dockerfile`. Les migrations Prisma sont appliquées au démarrage de `web` (`prisma migrate deploy`).
+
+| Mode | Front | BDD | Code source | Fichier |
+|---|---|---|---|---|
+| **1. Dev** | local (`npm run dev`) | Docker (pull) | requis | `docker-compose.yml` (db seul) |
+| **2. Build soi-même** | Docker (**build** → `local/tasks-manager`) | Docker (pull) | **requis** | `docker-compose.yml` |
+| **3. Pull depuis GHCR** | Docker (**pull** GHCR → `ghcr.io/maximebgd/tasks-manager`) | Docker (pull) | non requis | `docker-compose.prod.yml` |
+
+Il y a en fait **deux façons** de le lancer avec Docker :
+
+- **Pull depuis GHCR** (mode 3) — le code source n'est **pas obligatoire** : les deux images (`web` depuis GHCR + `db` depuis Docker Hub) suffisent. Idéal pour simplement déployer et lancer.
+- **Build soi-même** (mode 2) — le code source **est obligatoire** : Compose build l'image `web` localement. C'est le mode à utiliser pour **ajouter tes propres fonctionnalités** au projet.
+
+### 1. Dev — front local + BDD dans Docker
+
+Le mode à utiliser **quand on développe l'app** : le front tourne en local, donc les modifications s'affichent **en temps réel** (hot reload, aucun rebuild). Modèle recommandé : **BDD dans Docker, app en local**. Seule la BDD tourne dans Docker.
 
 ```bash
 npm install
@@ -101,18 +125,43 @@ npm run db:seed      # (optionnel) données de démo
 npm run dev          # app en local — http://localhost:3000
 ```
 
-Scripts utiles : `db:studio` (Prisma Studio), `db:reset` (réinitialise + reseed), `db:down` (arrête la BDD), `db:generate` (client Prisma), `db:deploy` (migrations en prod).
+Scripts utiles : `db:seed` (données de test), `db:clear` (vide la BDD), `db:reset` (vide + reseed), `db:studio` (Prisma Studio), `db:down` (arrête la BDD), `db:generate` (client Prisma), `db:deploy` (migrations en prod).
 
 > ⚠️ **Vérification** : type-check avec `npx tsc --noEmit`. Éviter `next build` juste pour vérifier — préférer le serveur `dev`.
 
-## Variables d'environnement
+### 2. Build soi-même — compose *build* le front + *pull* la BDD
 
-Copier `.env.example` en `.env` pour le dev local. En Docker, la valeur est fournie par `docker-compose.yml`.
+Nécessite le **code source**. L'image `web` est buildée localement (taguée `local/tasks-manager`) et Postgres est pullé. C'est le mode à utiliser pour **ajouter tes propres fonctionnalités** au projet.
 
-| Variable | Défaut | Description |
-|---|---|---|
-| `DATABASE_URL` | `postgresql://tasks:tasks@localhost:5432/tasks?schema=public` | **Requis.** Chaîne de connexion PostgreSQL |
-| `MCP_TOKEN` | _(vide)_ | Token d'accès de l'endpoint MCP (`/api/mcp`). Sans lui, l'endpoint reste inactif. Génère-le avec `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
+```bash
+docker compose up --build -d   # build l'image web + démarre (rebuild après un changement de code)
+docker compose down            # arrête (ajouter -v pour supprimer aussi le volume BDD)
+```
+
+> **Données de démo (optionnel)** — une fois les conteneurs lancés, seed la BDD depuis le conteneur `web` :
+> ```bash
+> docker compose exec web npm run db:seed
+> ```
+
+### 3. Pull depuis GHCR — compose *pull* le front + *pull* la BDD
+
+**Aucun code source requis** : les deux images viennent des registres (`web` depuis GHCR, `db` depuis Docker Hub). Il suffit de déployer et lancer.
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --pull always   # pull les deux images + démarre
+docker compose -f docker-compose.prod.yml down                  # arrête (ajouter -v pour supprimer aussi le volume BDD)
+# TAG épingle une version (défaut : latest)
+TAG=1.2.3 docker compose -f docker-compose.prod.yml up -d --pull always
+```
+
+> **Données de démo (optionnel)** — une fois les conteneurs lancés, seed la BDD depuis le conteneur `web` :
+> ```bash
+> docker compose -f docker-compose.prod.yml exec web npm run db:seed
+> ```
+
+> L'image `web` publiée sur GHCR est **publique** : aucun `docker login` n'est nécessaire pour la pull.
+
+La CI (`.github/workflows/docker-publish.yml`) build l'image `web` en multi-arch (amd64 + arm64) et la pousse sur GHCR à chaque push sur `main` (`:latest`) et sur chaque tag `v*` (`:1.2.3`).
 
 ## Architecture (Next full-stack)
 
@@ -153,47 +202,6 @@ Un endpoint **MCP** (Model Context Protocol) optionnel permet de connecter ton p
   }
 }
 ```
-
-## Les 3 modes de lancement
-
-L'app tourne en **2 conteneurs** : `web` (Next, full-stack) et `db` (Postgres 16). Postgres est toujours **pullé** (image officielle) ; seul `web` a un `Dockerfile`. Les migrations Prisma sont appliquées au démarrage de `web` (`prisma migrate deploy`).
-
-| Mode | Front | BDD | Fichier |
-|---|---|---|---|
-| **1. Dev** | local (`npm run dev`) | Docker (pull) | `docker-compose.yml` (db seul) |
-| **2. Prod (build)** | Docker (**build**) | Docker (pull) | `docker-compose.yml` |
-| **3. Prod (pull)** | Docker (**pull** GHCR) | Docker (pull) | `docker-compose.prod.yml` |
-
-### 1. Dev — front local + BDD dans Docker
-
-Hot reload sur la machine ; seule la BDD tourne dans Docker. (Voir [Lancer le projet](#lancer-le-projet) pour le premier lancement : install, migrations, seed.)
-
-```bash
-npm run db:up   # Postgres dans Docker (service db uniquement)
-npm run dev     # front en local — http://localhost:3000
-```
-
-### 2. Prod (build) — compose *build* le front + *pull* la BDD
-
-Sur une machine qui a le code source : l'image `web` est buildée localement, Postgres est pullé.
-
-```bash
-docker compose up --build -d
-```
-
-### 3. Prod (pull) — compose *pull* le front + *pull* la BDD
-
-Sur un serveur **sans le code source** : les deux images viennent des registres (`web` depuis GHCR, `db` depuis Docker Hub).
-
-```bash
-docker compose -f docker-compose.prod.yml up -d
-# TAG épingle une version (défaut : latest)
-TAG=1.2.3 docker compose -f docker-compose.prod.yml up -d
-```
-
-> L'image `web` publiée sur GHCR est **publique** : aucun `docker login` n'est nécessaire pour la pull.
-
-La CI (`.github/workflows/docker-publish.yml`) build l'image `web` en multi-arch (amd64 + arm64) et la pousse sur GHCR à chaque push sur `main` (`:latest`) et sur chaque tag `v*` (`:1.2.3`).
 
 ## Schéma
 

@@ -28,6 +28,9 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/prisma ./prisma
+# `lib/` est copié pour le seed optionnel (`prisma/seed.ts` importe `lib/mock-data.ts`),
+# lançable via `docker compose exec web npm run db:seed`.
+COPY --from=build /app/lib ./lib
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/next.config.ts ./next.config.ts
 
