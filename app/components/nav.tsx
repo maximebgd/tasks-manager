@@ -29,8 +29,10 @@ const links = [
     label: "Tableau",
     icon: icon(
       <>
-        <rect x="3" y="3" width="7" height="18" rx="1.5" />
-        <rect x="14" y="3" width="7" height="11" rx="1.5" />
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <path d="M8 7v7" />
+        <path d="M12 7v4" />
+        <path d="M16 7v9" />
       </>,
     ),
   },
@@ -89,20 +91,30 @@ export function Nav() {
       >
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-content text-page shadow-card">
           <svg
-            width="16"
-            height="16"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.5"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
           >
-            <path d="M5 12.5l4 4 10-10" />
+            <rect x="3.5" y="4.5" width="17" height="16" rx="2" />
+            <path d="M3.5 9h17M8 3v3M16 3v3" />
+            <rect
+              x="14"
+              y="14.5"
+              width="2.5"
+              height="2.5"
+              rx="0.5"
+              fill="var(--color-accent)"
+              stroke="none"
+            />
           </svg>
         </span>
-        <span className="hidden lg:inline">Tasks</span>
+        <span className="hidden lg:inline">Tasks Manager</span>
       </Link>
       <div className="flex flex-col gap-1">
         {links.map((l) => {
@@ -114,7 +126,7 @@ export function Nav() {
               title={l.label}
               className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition duration-200 ease-smooth ${
                 active
-                  ? "bg-surface text-content shadow-card"
+                  ? "bg-accent-soft text-accent-text font-semibold shadow-card"
                   : "text-muted hover:bg-surface-hover hover:text-content"
               }`}
             >
