@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { CopyField } from "./copy-field";
 
 // Page de configuration du serveur MCP. Affiche l'URL de l'endpoint, le token
@@ -90,6 +91,13 @@ export default async function McpSettingsPage() {
           purger), étiquettes (CRUD) et todos journalières (créer, cocher,
           sous-tâches, corbeille). Périmètre : lecture + écriture complète.
         </p>
+        <Link
+          href="/settings/mcp/tools"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-2 text-sm font-medium text-content transition duration-200 ease-smooth hover:bg-surface-hover"
+        >
+          Référence des outils
+          <span aria-hidden="true">→</span>
+        </Link>
       </section>
     </main>
   );

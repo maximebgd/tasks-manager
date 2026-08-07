@@ -40,6 +40,7 @@ Endpoint **Streamable HTTP** (`app/api/mcp/route.ts`) qui laisse un LLM externe 
 - **Outils** : définis dans `lib/mcp/tools.ts`, logique dans `lib/mcp/service.ts` (réutilise les lecteurs de `lib/data.ts` + Prisma, mêmes conventions de position/soft delete que les Server Actions). Périmètre **lecture + écriture complète** (tâches, tags, todos journalières). Les IDs sont générés par Prisma, pas fournis par le LLM.
 - **Auth** : token statique `MCP_TOKEN` (`.env`) via `Authorization: Bearer`. Sans token → endpoint inactif (503).
 - **Config** : page `/settings/mcp` (URL, token, snippet `mcp-remote` prêt à coller).
+- **Doc des outils** : **source unique** = `lib/mcp/catalog.ts` (catalogue typé). Il alimente : la page in-app `/settings/mcp/tools` (rendu JSX), le fichier `docs/mcp-tools.md` (généré par `npm run docs:mcp`, ne pas éditer à la main) et les `description` des `registerTool`. En ajoutant/modifiant un outil → mettre à jour le catalogue puis relancer `npm run docs:mcp`.
 
 ## Conventions
 

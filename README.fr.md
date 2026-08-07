@@ -138,7 +138,7 @@ Copier `.env.example` en `.env` pour le dev local. En Docker, la valeur est four
 Un endpoint **MCP** (Model Context Protocol) optionnel permet de connecter ton propre LLM — local ou cloud (Claude Desktop, LM Studio, Ollama…) — pour qu'il lise et modifie tes tâches. Aucun chat intégré : tu apportes ton propre client MCP.
 
 - **Endpoint** — `app/api/mcp/route.ts`, Streamable HTTP, servi par l'app Next elle-même (un seul déploiement, réutilise le singleton Prisma). Construit avec `mcp-handler` + `@modelcontextprotocol/server`, schémas d'entrée en zod.
-- **Outils** — définis dans `lib/mcp/tools.ts` (logique dans `lib/mcp/service.ts`, réutilise les lecteurs de `lib/data.ts` + Prisma). Périmètre **lecture + écriture complète** : tâches (lister / rechercher / détail / créer / modifier / corbeille / restaurer / purger), étiquettes (CRUD) et todos journalières (créer / cocher / sous-tâches / corbeille). Les IDs sont générés par Prisma, pas par le LLM.
+- **Outils** — définis dans `lib/mcp/tools.ts` (logique dans `lib/mcp/service.ts`, réutilise les lecteurs de `lib/data.ts` + Prisma). Périmètre **lecture + écriture complète** : tâches (lister / rechercher / détail / créer / modifier / corbeille / restaurer / purger), étiquettes (CRUD) et todos journalières (créer / cocher / sous-tâches / corbeille). Les IDs sont générés par Prisma, pas par le LLM. Voir la **[référence des outils](./docs/mcp-tools.md)**.
 - **Auth** — token statique `MCP_TOKEN` via `Authorization: Bearer`. Sans token, l'endpoint reste inactif (503).
 - **Configuration** — ouvre `/settings/mcp` pour l'URL de l'endpoint, le token et un snippet client prêt à coller (via le pont `mcp-remote`, qui relaie le transport HTTP + l'en-tête d'authentification) :
 

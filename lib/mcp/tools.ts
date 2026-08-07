@@ -2,11 +2,20 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { TAG_COLORS, type TagColor } from "@/lib/types";
 import { todayISO } from "@/lib/date";
+import { toolSummary } from "./catalog";
 import * as svc from "./service";
 
 // Enregistrement des outils exposés au LLM via MCP. Périmètre : lecture +
 // écriture complète (tâches, étiquettes, todos journalières). Chaque outil
 // valide ses entrées avec zod et renvoie du texte JSON sérialisé.
+//
+// Les `description` proviennent du catalogue (`lib/mcp/catalog.ts`, source
+// unique partagée avec la doc). Les outils datés y ajoutent le jour courant.
+
+// Rappel du jour courant, ajouté à l'exécution aux descriptions des outils
+// manipulant des dates (le catalogue reste statique, sans date figée).
+const withToday = (name: string) =>
+  `${toolSummary(name)} Dates au format YYYY-MM-DD (aujourd'hui = ${todayISO()}).`;
 
 const statusSchema = z.enum(["todo", "in_progress", "done"]);
 const prioritySchema = z.enum(["low", "medium", "high"]);
@@ -27,9 +36,7 @@ export function registerTools(server: McpServer): void {
     "list_tasks",
     {
       title: "Lister les tâches",
-      description:
-        "Liste les tâches du tableau. Filtres optionnels : statut, id d'étiquette, " +
-        "ou corbeille (tâches supprimées). Sans filtre : toutes les tâches actives.",
+      description: toolSummary("list_tasks"),
       inputSchema: z.object({
         status: statusSchema.optional().describe("todo | in_progress | done"),
         tagId: z.string().optional().describe("id d'une étiquette (voir list_tags)"),
@@ -47,9 +54,7 @@ export function registerTools(server: McpServer): void {
     "search_tasks",
     {
       title: "Rechercher des tâches",
-      description:
-        "Recherche insensible à la casse dans le titre, la description et les notes " +
-        "des tâches actives.",
+      description: toolSummary("search_tasks"),
       inputSchema: z.object({ query: z.string().min(1) }),
     },
     async ({ query }) => json(await svc.searchTasks(query)),
@@ -59,7 +64,7 @@ export function registerTools(server: McpServer): void {
     "get_task",
     {
       title: "Détail d'une tâche",
-      description: "Renvoie une tâche complète par son id (notes incluses).",
+      description: toolSummary("get_task"),
       inputSchema: z.object({ id: z.string() }),
     },
     async ({ id }) => {
@@ -74,10 +79,7 @@ export function registerTools(server: McpServer): void {
     "create_task",
     {
       title: "Créer une tâche",
-      description:
-        "Crée une tâche. Seul le titre est requis. Défauts : statut=todo, " +
-        "priorité=medium. `dueDate` au format YYYY-MM-DD (aujourd'hui = " +
-        `${todayISO()}). \`tagIds\` : ids d'étiquettes existantes (voir list_tags).`,
+      description: withToday("create_task"),
       inputSchema: z.object({
         title: z.string().min(1),
         description: z.string().optional(),
@@ -95,9 +97,7 @@ export function registerTools(server: McpServer): void {
     "update_task",
     {
       title: "Modifier une tâche",
-      description:
-        "Met à jour les champs fournis d'une tâche (les autres restent inchangés). " +
-        "`tagIds` remplace l'ensemble des étiquettes. Passer null efface un champ.",
+      description: toolSummary("update_task"),
       inputSchema: z.object({
         id: z.string(),
         title: z.string().min(1).optional(),
@@ -116,8 +116,7 @@ export function registerTools(server: McpServer): void {
     "delete_task",
     {
       title: "Supprimer une tâche (corbeille)",
-      description:
-        "Met la tâche à la corbeille (suppression douce, réversible via restore_task).",
+      description: toolSummary("delete_task"),
       inputSchema: z.object({ id: z.string() }),
     },
     async ({ id }) => {
@@ -130,7 +129,7 @@ export function registerTools(server: McpServer): void {
     "restore_task",
     {
       title: "Restaurer une tâche",
-      description: "Restaure une tâche depuis la corbeille.",
+      description: toolSummary("restore_task"),
       inputSchema: z.object({ id: z.string() }),
     },
     async ({ id }) => {
@@ -143,9 +142,7 @@ export function registerTools(server: McpServer): void {
     "purge_task",
     {
       title: "Supprimer définitivement une tâche",
-      description:
-        "Supprime définitivement une tâche. IRRÉVERSIBLE : à n'utiliser que sur " +
-        "confirmation explicite de l'utilisateur.",
+      description: toolSummary("purge_task"),
       inputSchema: z.object({ id: z.string() }),
     },
     async ({ id }) => {
@@ -160,7 +157,7 @@ export function registerTools(server: McpServer): void {
     "list_tags",
     {
       title: "Lister les étiquettes",
-      description: "Liste toutes les étiquettes (id, nom, couleur).",
+      description: toolSummary("list_tags"),
       inputSchema: z.object({}),
     },
     async () => json(await svc.listTags()),
@@ -170,7 +167,7 @@ export function registerTools(server: McpServer): void {
     "create_tag",
     {
       title: "Créer une étiquette",
-      description: `Crée une étiquette. Couleurs valides : ${TAG_COLORS.join(", ")}.`,
+      description: `${toolSummary("create_tag")} Couleurs valides : ${TAG_COLORS.join(", ")}.`,
       inputSchema: z.object({ name: z.string().min(1), color: colorSchema }),
     },
     async (input) => json(await svc.createTag(input)),
@@ -180,7 +177,7 @@ export function registerTools(server: McpServer): void {
     "update_tag",
     {
       title: "Modifier une étiquette",
-      description: "Renomme et/ou recolore une étiquette.",
+      description: toolSummary("update_tag"),
       inputSchema: z.object({
         id: z.string(),
         name: z.string().min(1).optional(),
@@ -194,9 +191,7 @@ export function registerTools(server: McpServer): void {
     "delete_tag",
     {
       title: "Supprimer une étiquette",
-      description:
-        "Supprime une étiquette ; ses liens avec les tâches partent en cascade. " +
-        "IRRÉVERSIBLE.",
+      description: toolSummary("delete_tag"),
       inputSchema: z.object({ id: z.string() }),
     },
     async ({ id }) => {
@@ -211,9 +206,7 @@ export function registerTools(server: McpServer): void {
     "list_daily_todos",
     {
       title: "Lister les todos journalières",
-      description:
-        "Liste les todos journalières (avec leurs sous-tâches). Filtre optionnel " +
-        `par jour (YYYY-MM-DD ; aujourd'hui = ${todayISO()}).`,
+      description: withToday("list_daily_todos"),
       inputSchema: z.object({
         date: dateSchema.optional(),
         trashed: z.boolean().optional().describe("true pour lister la corbeille"),
@@ -226,7 +219,7 @@ export function registerTools(server: McpServer): void {
     "create_daily_todo",
     {
       title: "Créer une todo journalière",
-      description: `Crée une todo pour un jour donné (YYYY-MM-DD ; aujourd'hui = ${todayISO()}).`,
+      description: withToday("create_daily_todo"),
       inputSchema: z.object({ date: dateSchema, title: z.string().min(1) }),
     },
     async (input) => json(await svc.createDailyTodo(input)),
@@ -236,7 +229,7 @@ export function registerTools(server: McpServer): void {
     "set_daily_todo_done",
     {
       title: "Cocher/décocher une todo journalière",
-      description: "Marque une todo journalière comme faite ou non.",
+      description: toolSummary("set_daily_todo_done"),
       inputSchema: z.object({ id: z.string(), done: z.boolean() }),
     },
     async ({ id, done }) => {
@@ -249,7 +242,7 @@ export function registerTools(server: McpServer): void {
     "delete_daily_todo",
     {
       title: "Supprimer une todo journalière (corbeille)",
-      description: "Met une todo journalière à la corbeille (réversible).",
+      description: toolSummary("delete_daily_todo"),
       inputSchema: z.object({ id: z.string() }),
     },
     async ({ id }) => {
@@ -262,7 +255,7 @@ export function registerTools(server: McpServer): void {
     "restore_daily_todo",
     {
       title: "Restaurer une todo journalière",
-      description: "Restaure une todo journalière depuis la corbeille.",
+      description: toolSummary("restore_daily_todo"),
       inputSchema: z.object({ id: z.string() }),
     },
     async ({ id }) => {
@@ -275,7 +268,7 @@ export function registerTools(server: McpServer): void {
     "add_subtask",
     {
       title: "Ajouter une sous-tâche",
-      description: "Ajoute une sous-tâche à une todo journalière existante.",
+      description: toolSummary("add_subtask"),
       inputSchema: z.object({ dailyTodoId: z.string(), title: z.string().min(1) }),
     },
     async (input) => {
@@ -288,7 +281,7 @@ export function registerTools(server: McpServer): void {
     "set_subtask_done",
     {
       title: "Cocher/décocher une sous-tâche",
-      description: "Marque une sous-tâche comme faite ou non.",
+      description: toolSummary("set_subtask_done"),
       inputSchema: z.object({ id: z.string(), done: z.boolean() }),
     },
     async ({ id, done }) => {
