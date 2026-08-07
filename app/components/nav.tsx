@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "./theme-toggle";
 import { SyncIndicator } from "./sync-indicator";
+import { Clock } from "./clock";
 
 const icon = (paths: ReactNode) => (
   <svg
@@ -123,7 +124,10 @@ export function Nav() {
           );
         })}
       </div>
-      <div className="mt-auto flex items-center justify-center gap-2 border-t border-line pt-3 lg:justify-between lg:px-1">
+      <div className="mt-auto">
+        <Clock />
+      </div>
+      <div className="flex items-center justify-center gap-2 border-t border-line pt-3 lg:justify-between lg:px-1">
         <ThemeToggle />
         <SyncIndicator />
       </div>
