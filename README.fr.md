@@ -22,6 +22,7 @@ Construit avec **Next.js 16** en full-stack (App Router) : la **lecture** passe 
 | Backend | Next.js Server Actions (écriture) + Server Components (lecture) |
 | ORM / BDD | Prisma 6 + PostgreSQL 16 |
 | Contenu | react-markdown + remark-gfm (notes en Markdown) |
+| IA / MCP | Serveur MCP embarqué (`mcp-handler` + `@modelcontextprotocol/server`) exposant les tâches à un LLM externe |
 | Conteneurisation | Docker + docker-compose (services `web` + `db`), CI de publication GHCR |
 
 ## Structure
@@ -49,10 +50,13 @@ tasks-manager/
 │   ├── daily/page.tsx           # Todo journalière (/daily)
 │   ├── calendar/page.tsx        # Calendrier (/calendar)
 │   ├── trash/page.tsx           # Corbeille (/trash)
+│   ├── api/mcp/route.ts         # Endpoint MCP (Streamable HTTP) — accès LLM externe
+│   ├── settings/mcp/page.tsx    # Page de config MCP (URL, token, snippet client)
 │   ├── layout.tsx               # Providers (Tasks / Tags / Toast) initialisés depuis la BDD
 │   └── globals.css              # Tailwind v4 + tokens sémantiques + mode nuit (.dark)
 ├── lib/
 │   ├── data.ts                 # Lectures serveur (getTasks, getTrashedTasks, getTags, getDailyTodos)
+│   ├── mcp/                    # Serveur MCP — tools.ts (déf. des outils) + service.ts (logique BDD)
 │   ├── tasks-context.tsx       # Store client des tâches (useTasks) — optimiste + rollback
 │   ├── tags-context.tsx        # Store client des étiquettes (useTags)
 │   ├── toast-context.tsx       # Notifications (useToast)
@@ -81,6 +85,7 @@ tasks-manager/
 - **Notes en Markdown** — édition et rendu (react-markdown + remark-gfm) sur la fiche de tâche.
 - **Mode jour / nuit** — bascule sans flash au chargement, piloté par la classe `.dark` et des tokens CSS sémantiques.
 - **UI optimiste** — chaque mutation s'applique instantanément puis persiste ; en cas d'échec, l'état est restauré et un **toast** d'erreur s'affiche.
+- **Serveur MCP (optionnel)** — connecte ton propre LLM (Claude Desktop, LM Studio, Ollama…) via l'endpoint `/api/mcp` pour lire et modifier tâches, étiquettes et todos journalières. Configuration sur la page `/settings/mcp`.
 
 ## Lancer le projet
 
@@ -107,6 +112,7 @@ Copier `.env.example` en `.env` pour le dev local. En Docker, la valeur est four
 | Variable | Défaut | Description |
 |---|---|---|
 | `DATABASE_URL` | `postgresql://tasks:tasks@localhost:5432/tasks?schema=public` | **Requis.** Chaîne de connexion PostgreSQL |
+| `MCP_TOKEN` | _(vide)_ | Token d'accès de l'endpoint MCP (`/api/mcp`). Sans lui, l'endpoint reste inactif. Génère-le avec `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
 
 ## Architecture (Next full-stack)
 
@@ -126,6 +132,27 @@ Copier `.env.example` en `.env` pour le dev local. En Docker, la valeur est four
 | `Tag` | Étiquette réutilisable : `name` (unique), `color` (clé sémantique) |
 | `DailyTodo` | Élément de la todo journalière : `date` (ISO), `title`, `done`, `position` |
 | `SubTodo` | Sous-tâche cochable rattachée à un `DailyTodo` (cascade à la suppression) |
+
+## Serveur MCP
+
+Un endpoint **MCP** (Model Context Protocol) optionnel permet de connecter ton propre LLM — local ou cloud (Claude Desktop, LM Studio, Ollama…) — pour qu'il lise et modifie tes tâches. Aucun chat intégré : tu apportes ton propre client MCP.
+
+- **Endpoint** — `app/api/mcp/route.ts`, Streamable HTTP, servi par l'app Next elle-même (un seul déploiement, réutilise le singleton Prisma). Construit avec `mcp-handler` + `@modelcontextprotocol/server`, schémas d'entrée en zod.
+- **Outils** — définis dans `lib/mcp/tools.ts` (logique dans `lib/mcp/service.ts`, réutilise les lecteurs de `lib/data.ts` + Prisma). Périmètre **lecture + écriture complète** : tâches (lister / rechercher / détail / créer / modifier / corbeille / restaurer / purger), étiquettes (CRUD) et todos journalières (créer / cocher / sous-tâches / corbeille). Les IDs sont générés par Prisma, pas par le LLM.
+- **Auth** — token statique `MCP_TOKEN` via `Authorization: Bearer`. Sans token, l'endpoint reste inactif (503).
+- **Configuration** — ouvre `/settings/mcp` pour l'URL de l'endpoint, le token et un snippet client prêt à coller (via le pont `mcp-remote`, qui relaie le transport HTTP + l'en-tête d'authentification) :
+
+```json
+{
+  "mcpServers": {
+    "tasks-manager": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:3000/api/mcp",
+               "--header", "Authorization: Bearer <ton-token>"]
+    }
+  }
+}
+```
 
 ## Les 3 modes de lancement
 
@@ -183,7 +210,10 @@ flowchart TD
         direction TB
         RC["Server Components — lecture\n─────────────────\nlib/data.ts\ngetTasks · getTrashedTasks\ngetTags · getDailyTodos"]
         SA["Server Actions — écriture\n─────────────────\napp/actions/*\ntasks · daily · tags"]
+        MCP["Serveur MCP — Streamable HTTP\n─────────────────\napp/api/mcp · lib/mcp/*\ntools + service (lecture/écriture)"]
     end
+
+    LLM([Client LLM externe\nClaude Desktop · LM Studio · Ollama])
 
     subgraph DATA["🗄️ Persistance"]
         direction TB
@@ -206,10 +236,15 @@ flowchart TD
     SA -->|"create / update / delete"| PR
     SA -.->|"échec → rollback + toast"| CTX
 
+    %% MCP (LLM externe)
+    LLM -->|"MCP · token Bearer"| MCP
+    MCP -->|"lecture / écriture"| PR
+
     PR <--> DB
 
     %% Styles
     style CLIENT fill:#1e293b,color:#e2e8f0,stroke:#3b82f6
     style SERVER fill:#0f172a,color:#e2e8f0,stroke:#10b981
     style DATA fill:#1c1917,color:#fde68a,stroke:#f59e0b
+    style LLM fill:#2e1065,color:#e9d5ff,stroke:#a855f7
 ```

@@ -32,6 +32,15 @@ Gestionnaire de tâches façon « Notion » : tableau kanban (`/`), todo journal
 - **Ordre (drag & drop)** : persisté via la colonne `position` ; les actions de réordonnancement renumérotent.
 - **`lib/mock-data.ts`** ne sert plus qu'au **seed** (`prisma/seed.ts`), pas à l'app.
 
+## Serveur MCP
+
+Endpoint **Streamable HTTP** (`app/api/mcp/route.ts`) qui laisse un LLM externe (Claude Desktop, LM Studio, Ollama…) piloter l'app via le protocole MCP — pas de chat intégré, l'utilisateur apporte son client.
+
+- **Techno** : `mcp-handler` embarqué dans un route handler Next (runtime `nodejs`, `force-dynamic`) ; SDK `@modelcontextprotocol/server`, schémas d'entrée en **zod**.
+- **Outils** : définis dans `lib/mcp/tools.ts`, logique dans `lib/mcp/service.ts` (réutilise les lecteurs de `lib/data.ts` + Prisma, mêmes conventions de position/soft delete que les Server Actions). Périmètre **lecture + écriture complète** (tâches, tags, todos journalières). Les IDs sont générés par Prisma, pas fournis par le LLM.
+- **Auth** : token statique `MCP_TOKEN` (`.env`) via `Authorization: Bearer`. Sans token → endpoint inactif (503).
+- **Config** : page `/settings/mcp` (URL, token, snippet `mcp-remote` prêt à coller).
+
 ## Conventions
 
 - **Couleurs** : utiliser les **tokens sémantiques** (`bg-page`, `bg-surface`, `bg-surface-muted/hover`, `text-content`, `text-muted`, `text-faint`, `border-line`, `text-accent`, `tag-*`, `due-today`…) définis dans `globals.css`, **pas** la palette Tailwind brute. Le mode nuit est **piloté par la classe `.dark`** (`@custom-variant`) et bascule tout via variables CSS ; ne pas réintroduire de `dark:` ni de couleurs figées.
