@@ -52,6 +52,11 @@
 
   /* Échéance aujourd'hui (orange d'alerte). */
   --due-today: #d9730d;
+
+  /* Diodes d'état — couleurs vives et saturées (look LED). */
+  --led-green: #22c55e;
+  --led-red: #f43f5e;
+  --led-orange: #f59e0b;
 }
 
 .dark {
@@ -98,6 +103,11 @@
   --tag-pink-text: #ed9bc4;
 
   --due-today: #f0a35e;
+
+  /* Diodes d'état — encore plus lumineuses sur fond sombre. */
+  --led-green: #4ade80;
+  --led-red: #fb5972;
+  --led-orange: #fbbf24;
 }
 
 @theme inline {
@@ -356,4 +366,21 @@ html.theme-ready body * {
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+/* Diodes d'état : pastille vive avec halo lumineux (look LED). */
+.led {
+  background-color: var(--led-color);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--led-color) 40%, transparent),
+    0 0 8px 1px color-mix(in srgb, var(--led-color) 70%, transparent);
+}
+.led-green {
+  --led-color: var(--led-green);
+}
+.led-red {
+  --led-color: var(--led-red);
+}
+.led-orange {
+  --led-color: var(--led-orange);
 }

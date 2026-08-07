@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
-import { CopyField } from "./copy-field";
+import { CopyField, CopyPromptButton } from "./copy-field";
+import { McpStatus } from "./status";
 
 // Page de configuration du serveur MCP. Affiche l'URL de l'endpoint, le token
 // (lu côté serveur) et un snippet prêt à coller pour brancher un client LLM.
@@ -35,6 +36,22 @@ export default async function McpSettingsPage() {
     2,
   );
 
+  // Prompt clé-en-main à coller dans un agent (Claude Code, Codex…) pour qu'il
+  // se branche seul au serveur MCP à partir de l'URL et du token.
+  const agentPrompt = `Connecte-toi à mon serveur MCP « tasks-manager » (gestionnaire de tâches : tableau kanban, todos journalières, étiquettes) pour pouvoir lire et modifier mes tâches.
+
+Détails de connexion (transport Streamable HTTP) :
+- URL de l'endpoint : ${endpoint}
+- Authentification : en-tête HTTP « Authorization: Bearer ${tokenForSnippet} »
+
+Si tu es Claude Code (CLI), exécute :
+  claude mcp add --transport http tasks-manager ${endpoint} --header "Authorization: Bearer ${tokenForSnippet}"
+
+Sinon, ajoute ce serveur à ta configuration MCP via le pont mcp-remote :
+  npx mcp-remote ${endpoint} --header "Authorization: Bearer ${tokenForSnippet}"
+
+Une fois connecté, liste les outils exposés par le serveur, puis confirme que tout fonctionne en m'affichant mes tâches en cours.`;
+
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-10">
       <header className="mb-8">
@@ -45,6 +62,8 @@ export default async function McpSettingsPage() {
           modifier tes tâches, étiquettes et todos journalières.
         </p>
       </header>
+
+      <McpStatus />
 
       {!configured && (
         <div className="mb-8 rounded-2xl border border-line bg-surface-muted p-4">
@@ -81,6 +100,27 @@ export default async function McpSettingsPage() {
             relaie le transport HTTP + l'en-tête d'authentification.
           </p>
           <CopyField value={claudeSnippet} multiline />
+        </div>
+
+        <div className="flex flex-col gap-2 border-t border-line pt-6">
+          <span className="text-xs font-medium text-muted">
+            Connexion automatique par un agent
+          </span>
+          <p className="text-sm text-muted">
+            Copie un prompt prêt à coller dans un agent (Claude Code, Codex…)
+            avec l'URL, le token et les commandes de connexion : il se branchera
+            seul au serveur MCP.
+            {!configured && (
+              <>
+                {" "}
+                <span className="text-content">
+                  Définis d'abord un <code className="font-mono">MCP_TOKEN</code>{" "}
+                  pour un prompt fonctionnel.
+                </span>
+              </>
+            )}
+          </p>
+          <CopyPromptButton value={agentPrompt} />
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 import { createMcpHandler } from "mcp-handler";
 import { registerTools } from "@/lib/mcp/tools";
+import { recordMcpEvent } from "@/lib/mcp/stats";
 
 // Endpoint MCP (Streamable HTTP) exposé par l'app Next. Un client LLM (Claude
 // Desktop, LM Studio, Ollama…) s'y connecte pour piloter les tâches via les
@@ -19,6 +20,8 @@ const handler = createMcpHandler(
       "Gestionnaire de tâches (tableau kanban + todos journalières). Utilise " +
       "list_tags avant de rattacher des étiquettes, et list_tasks / search_tasks " +
       "pour retrouver un id avant de modifier ou supprimer.",
+    // Alimente les compteurs d'activité affichés sur /settings/mcp.
+    onEvent: recordMcpEvent,
   },
 );
 
