@@ -39,7 +39,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-tasks}:${POSTGRES_PASSWORD:-tasks}@db:5432/${POSTGRES_DB:-tasks}?schema=public
       NODE_ENV: production
     ports:
-      - "3000:3000"
+      # Boucle locale uniquement : l'app n'a pas d'authentification applicative,
+      # on ne l'expose donc pas au réseau. Accès via http://localhost:3000.
+      # Pour un accès depuis d'autres machines du LAN, remplacer par "3000:3000"
+      # en connaissance de cause (accès lecture/écriture total, sans barrière).
+      - "127.0.0.1:3000:3000"
 
 volumes:
   pgdata:

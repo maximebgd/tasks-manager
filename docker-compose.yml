@@ -8,8 +8,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tasks}
       POSTGRES_DB: ${POSTGRES_DB:-tasks}
     ports:
-      # Exposé pour l'outillage local (prisma migrate/studio depuis l'hôte).
-      - "5432:5432"
+      # Exposé sur la BOUCLE LOCALE uniquement (prisma migrate/studio depuis
+      # l'hôte). Pas de `0.0.0.0` : la BDD n'est jamais joignable depuis le LAN.
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -38,7 +39,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-tasks}:${POSTGRES_PASSWORD:-tasks}@db:5432/${POSTGRES_DB:-tasks}?schema=public
       NODE_ENV: production
     ports:
-      - "3000:3000"
+      # Boucle locale uniquement : l'app n'a pas d'authentification applicative,
+      # on ne l'expose donc pas au réseau. Accès via http://localhost:3000.
+      # Pour y accéder depuis d'autres machines du LAN, remplacer par "3000:3000"
+      # en connaissance de cause (accès lecture/écriture total, sans barrière).
+      - "127.0.0.1:3000:3000"
 
 volumes:
   pgdata:

@@ -96,6 +96,8 @@ Copier `.env.example` en `.env` pour le dev local. En Docker, la valeur est four
 | `DATABASE_URL` | `postgresql://tasks:tasks@localhost:5432/tasks?schema=public` | **Requis.** Chaîne de connexion PostgreSQL |
 | `MCP_TOKEN` | _(vide)_ | Token d'accès de l'endpoint MCP (`/api/mcp`). Sans lui, l'endpoint reste inactif. Génère-le avec `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
 
+> **Sécurité / modèle de menace.** L'app n'a **aucune authentification intégrée** : quiconque atteint le port `3000` a un accès lecture/écriture complet à tes tâches. Elle est conçue pour tourner **localement sur une seule machine**, donc les deux fichiers Compose exposent leurs ports sur `127.0.0.1` (boucle locale) — app et BDD ne sont jamais joignables depuis le LAN. Pour l'exposer volontairement sur le réseau, remplace `127.0.0.1:3000:3000` par `3000:3000` dans `docker-compose.yml`, et ajoute ton propre contrôle d'accès devant.
+
 ## Les 3 modes de lancement
 
 L'app tourne en **2 conteneurs** : `web` (Next, full-stack) et `db` (Postgres 16). Postgres est toujours **pullé** (image officielle) ; seul `web` a un `Dockerfile`. Les migrations Prisma sont appliquées au démarrage de `web` (`prisma migrate deploy`).
