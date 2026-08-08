@@ -142,6 +142,13 @@ docker compose up --build -d   # build l'image web + démarre (rebuild après un
 docker compose down            # arrête (ajouter -v pour supprimer aussi le volume BDD)
 ```
 
+> **Tag de version (optionnel)** — l'image locale s'appelle `local/tasks-manager:${TAG:-latest}` : **sans `TAG`, c'est `latest`**. Pour builder une version épinglée :
+> ```bash
+> TAG=1.0.0 docker compose build           # → local/tasks-manager:1.0.0
+> docker tag local/tasks-manager:1.0.0 local/tasks-manager:latest   # garde latest aligné
+> TAG=1.0.0 docker compose up -d           # lance cette version précise
+> ```
+
 > **Données de démo (optionnel)** — une fois les conteneurs lancés, seed la BDD depuis le conteneur `web` :
 > ```bash
 > docker compose exec web npm run db:seed
@@ -154,8 +161,8 @@ docker compose down            # arrête (ajouter -v pour supprimer aussi le vol
 ```bash
 docker compose -f docker-compose.prod.yml up -d --pull always   # pull les deux images + démarre
 docker compose -f docker-compose.prod.yml down                  # arrête (ajouter -v pour supprimer aussi le volume BDD)
-# TAG épingle une version (défaut : latest)
-TAG=1.2.3 docker compose -f docker-compose.prod.yml up -d --pull always
+# TAG épingle une version (défaut : latest). Ex. :
+TAG=1.0.0 docker compose -f docker-compose.prod.yml up -d --pull always
 ```
 
 > **Données de démo (optionnel)** — une fois les conteneurs lancés, seed la BDD depuis le conteneur `web` :
@@ -165,7 +172,21 @@ TAG=1.2.3 docker compose -f docker-compose.prod.yml up -d --pull always
 
 > L'image `web` publiée sur GHCR est **publique** : aucun `docker login` n'est nécessaire pour la pull.
 
-La CI (`.github/workflows/docker-publish.yml`) build l'image `web` en multi-arch (amd64 + arm64) et la pousse sur GHCR à chaque push sur `main` (`:latest`) et sur chaque tag `v*` (`:1.2.3`).
+### Publier une version
+
+La CI (`.github/workflows/docker-publish.yml`) build l'image `web` en multi-arch (amd64 + arm64) et la pousse sur GHCR :
+
+- à chaque push sur `main` → `:latest` (+ `:main`, `:sha-…`)
+- à chaque tag git `v*` → les tags semver **et** `:latest`
+
+Pour publier une version, tague un commit de `main` et pousse le tag :
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Ça publie `ghcr.io/maximebgd/tasks-manager:1.0.0`, `:1.0` et `:latest` — **la même image**. Pull une version **figée** avec `:1.0.0` (ne bouge jamais), ou le `:latest` **mouvant** pour la dernière version.
 
 ## Architecture (Next full-stack)
 

@@ -142,6 +142,13 @@ docker compose up --build -d   # build the web image + start (rebuild after code
 docker compose down            # stop (add -v to also drop the DB volume)
 ```
 
+> **Version tag (optional)** — the local image is named `local/tasks-manager:${TAG:-latest}`, so **without `TAG` it's `latest`**. To build a pinned version:
+> ```bash
+> TAG=1.0.0 docker compose build           # → local/tasks-manager:1.0.0
+> docker tag local/tasks-manager:1.0.0 local/tasks-manager:latest   # keep latest in sync
+> TAG=1.0.0 docker compose up -d           # run that exact version
+> ```
+
 > **Demo data (optional)** — once the containers are up, seed the DB from inside the `web` container:
 > ```bash
 > docker compose exec web npm run db:seed
@@ -154,8 +161,8 @@ docker compose down            # stop (add -v to also drop the DB volume)
 ```bash
 docker compose -f docker-compose.prod.yml up -d --pull always   # pull both images + start
 docker compose -f docker-compose.prod.yml down                  # stop (add -v to also drop the DB volume)
-# TAG pins a version (default: latest)
-TAG=1.2.3 docker compose -f docker-compose.prod.yml up -d --pull always
+# TAG pins a version (default: latest). Ex.:
+TAG=1.0.0 docker compose -f docker-compose.prod.yml up -d --pull always
 ```
 
 > **Demo data (optional)** — once the containers are up, seed the DB from inside the `web` container:
@@ -165,7 +172,21 @@ TAG=1.2.3 docker compose -f docker-compose.prod.yml up -d --pull always
 
 > The `web` image published on GHCR is **public**: no `docker login` is needed to pull it.
 
-The CI (`.github/workflows/docker-publish.yml`) builds the `web` image multi-arch (amd64 + arm64) and pushes it to GHCR on every push to `main` (`:latest`) and every `v*` tag (`:1.2.3`).
+### Releasing a version
+
+The CI (`.github/workflows/docker-publish.yml`) builds the `web` image multi-arch (amd64 + arm64) and pushes it to GHCR:
+
+- on every push to `main` → `:latest` (+ `:main`, `:sha-…`)
+- on every `v*` git tag → the semver tags **and** `:latest`
+
+To cut a release, tag a commit on `main` and push the tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This publishes `ghcr.io/maximebgd/tasks-manager:1.0.0`, `:1.0` and `:latest` — all the **same image**. Pull a **pinned** version with `:1.0.0` (never moves), or the **moving** `:latest` for the newest release.
 
 ## Architecture (Next full-stack)
 
