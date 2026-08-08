@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { createMcpHandler } from "mcp-handler";
 import { registerTools } from "@/lib/mcp/tools";
 import { recordMcpEvent } from "@/lib/mcp/stats";
@@ -32,6 +33,17 @@ function unauthorized(): Response {
   );
 }
 
+// Comparaison à temps constant du header `Authorization` avec le token attendu.
+// `timingSafeEqual` exige des buffers de même longueur (et lève sinon), donc on
+// hache les deux côtés en SHA-256 : longueur fixe, et la longueur du token
+// n'influe pas sur le temps de comparaison.
+function tokenMatches(header: string | null, token: string): boolean {
+  if (header === null) return false;
+  const expected = createHash("sha256").update(`Bearer ${token}`).digest();
+  const received = createHash("sha256").update(header).digest();
+  return timingSafeEqual(expected, received);
+}
+
 // Garde d'accès : un token statique `MCP_TOKEN` (Authorization: Bearer <token>).
 // Suffisant pour un usage mono-utilisateur ; l'endpoint reste inerte si le token
 // n'est pas configuré, pour ne jamais exposer la base par défaut.
@@ -44,7 +56,7 @@ async function guarded(request: Request): Promise<Response> {
     );
   }
   const header = request.headers.get("authorization");
-  if (header !== `Bearer ${token}`) return unauthorized();
+  if (!tokenMatches(header, token)) return unauthorized();
   return handler(request);
 }
 
