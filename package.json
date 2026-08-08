@@ -12,7 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
-    "db:clear": "prisma migrate reset --force --skip-seed",
+    "db:clear": "prisma migrate reset --skip-seed",
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
     "docs:mcp": "tsx scripts/gen-mcp-docs.ts"
