@@ -15,14 +15,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: tasks
-      POSTGRES_PASSWORD: tasks
-      POSTGRES_DB: tasks
+      # Identifiants lus depuis un .env sur la machine de prod (défaut `tasks`).
+      POSTGRES_USER: ${POSTGRES_USER:-tasks}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tasks}
+      POSTGRES_DB: ${POSTGRES_DB:-tasks}
     # Pas de port exposé en prod : seul `web` (réseau interne) accède à la BDD.
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tasks -d tasks"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tasks} -d ${POSTGRES_DB:-tasks}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -34,7 +35,8 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://tasks:tasks@db:5432/tasks?schema=public
+      # URL construite à partir des mêmes POSTGRES_* que le service `db`.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tasks}:${POSTGRES_PASSWORD:-tasks}@db:5432/${POSTGRES_DB:-tasks}?schema=public
       NODE_ENV: production
     ports:
       - "3000:3000"
