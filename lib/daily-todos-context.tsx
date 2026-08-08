@@ -191,8 +191,10 @@ export function DailyTodosProvider({
 
   const restoreTodo = (id: string) => {
     const snapshot = allTodos;
-    setAllTodos(
-      allTodos.map((t) => (t.id === id ? { ...t, deletedAt: null } : t)),
+    // Updater fonctionnel : un « Annuler » groupé enchaîne plusieurs restaurations
+    // dans le même tick sans que la dernière n'écrase les précédentes.
+    setAllTodos((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, deletedAt: null } : t)),
     );
     persist(
       restoreDailyTodoAction(id).then(() => toast.success("Tâche restaurée")),
@@ -287,7 +289,16 @@ export function DailyTodosProvider({
 
   const restoreSubtask = (subId: string) => {
     const snapshot = allTodos;
-    setAllTodos(mapSub(subId, (s) => ({ ...s, deletedAt: null })));
+    // Updater fonctionnel : un « Annuler » groupé enchaîne plusieurs restaurations
+    // dans le même tick sans que la dernière n'écrase les précédentes.
+    setAllTodos((prev) =>
+      prev.map((t) => ({
+        ...t,
+        subtasks: t.subtasks.map((s) =>
+          s.id === subId ? { ...s, deletedAt: null } : s,
+        ),
+      })),
+    );
     persist(
       restoreSubtaskAction(subId).then(() =>
         toast.success("Sous-tâche restaurée"),

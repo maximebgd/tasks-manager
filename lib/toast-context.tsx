@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -15,7 +16,11 @@ type Toast = {
   id: number;
   type: ToastType;
   message: string;
-  action?: ToastAction;
+  /** Nombre de notifications identiques regroupées dans ce toast. */
+  count: number;
+  actionLabel?: string;
+  /** Callbacks d'action accumulés (une par notification regroupée). */
+  actions: (() => void)[];
 };
 type ToastApi = {
   success: (message: string, action?: ToastAction) => void;
@@ -29,23 +34,82 @@ let counter = 0;
 /**
  * Notifications légères, stylées avec les tokens du thème (donc jour/nuit
  * automatique). Montée dans le layout, au-dessus des autres providers.
+ *
+ * Les toasts de même type + message sont **regroupés** en une seule carte avec
+ * un compteur, au lieu de s'empiler : une suppression en masse n'affiche donc
+ * qu'un toast « ×N », et « Annuler » restaure l'ensemble du lot.
  */
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  // Miroir synchrone de `toasts` pour décider du regroupement hors du updater.
+  const toastsRef = useRef<Toast[]>([]);
+  const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+
+  const commit = useCallback((next: Toast[]) => {
+    toastsRef.current = next;
+    setToasts(next);
+  }, []);
 
   const remove = useCallback(
-    (id: number) => setToasts((list) => list.filter((t) => t.id !== id)),
-    [],
+    (id: number) => {
+      const timer = timers.current.get(id);
+      if (timer) {
+        clearTimeout(timer);
+        timers.current.delete(id);
+      }
+      commit(toastsRef.current.filter((t) => t.id !== id));
+    },
+    [commit],
+  );
+
+  const scheduleRemoval = useCallback(
+    (id: number, delay: number) => {
+      const existing = timers.current.get(id);
+      if (existing) clearTimeout(existing);
+      timers.current.set(id, setTimeout(() => remove(id), delay));
+    },
+    [remove],
   );
 
   const push = useCallback(
     (type: ToastType, message: string, action?: ToastAction) => {
-      const id = ++counter;
-      setToasts((list) => [...list, { id, type, message, action }]);
       // Les toasts avec action (ex. « Annuler ») restent un peu plus longtemps.
-      setTimeout(() => remove(id), action ? 6000 : 3500);
+      const delay = action ? 6000 : 3500;
+      const existing = toastsRef.current.find(
+        (t) => t.type === type && t.message === message,
+      );
+      if (existing) {
+        commit(
+          toastsRef.current.map((t) =>
+            t.id === existing.id
+              ? {
+                  ...t,
+                  count: t.count + 1,
+                  actionLabel: action?.label ?? t.actionLabel,
+                  actions: action ? [...t.actions, action.onClick] : t.actions,
+                }
+              : t,
+          ),
+        );
+        // Le compteur repart : on prolonge la durée d'affichage.
+        scheduleRemoval(existing.id, delay);
+        return;
+      }
+      const id = ++counter;
+      commit([
+        ...toastsRef.current,
+        {
+          id,
+          type,
+          message,
+          count: 1,
+          actionLabel: action?.label,
+          actions: action ? [action.onClick] : [],
+        },
+      ]);
+      scheduleRemoval(id, delay);
     },
-    [remove],
+    [commit, scheduleRemoval],
   );
 
   const api = useMemo<ToastApi>(
@@ -80,16 +144,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 </svg>
               )}
               <span className="flex-1">{t.message}</span>
+              {t.count > 1 && (
+                <span className="shrink-0 rounded-full bg-surface-muted px-1.5 py-0.5 text-xs font-semibold tabular-nums text-muted">
+                  ×{t.count}
+                </span>
+              )}
             </button>
-            {t.action && (
+            {t.actionLabel && t.actions.length > 0 && (
               <button
                 onClick={() => {
-                  t.action?.onClick();
+                  t.actions.forEach((fn) => fn());
                   remove(t.id);
                 }}
                 className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs font-semibold text-accent transition duration-200 ease-smooth hover:bg-surface-hover active:scale-95"
               >
-                {t.action.label}
+                {t.actionLabel}
               </button>
             )}
           </div>

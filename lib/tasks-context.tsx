@@ -127,8 +127,10 @@ export function TasksProvider({
 
   const restoreTask = (id: string) => {
     const snapshot = allTasks;
-    setAllTasks(
-      allTasks.map((t) => (t.id === id ? { ...t, deletedAt: null } : t)),
+    // Updater fonctionnel : un « Annuler » groupé enchaîne plusieurs restaurations
+    // dans le même tick sans que la dernière n'écrase les précédentes.
+    setAllTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, deletedAt: null } : t)),
     );
     persist(
       restoreTaskAction(id).then(() => toast.success("Tâche restaurée")),
