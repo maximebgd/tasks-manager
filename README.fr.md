@@ -8,7 +8,7 @@
 
 Gestionnaire de tâches full-stack façon « Notion » : un tableau kanban, une todo journalière, un calendrier et une corbeille, avec des notes en Markdown et un mode jour/nuit.
 
-Construit avec **Next.js 16** en full-stack (App Router) : la **lecture** passe par des Server Components, l'**écriture** par des Server Actions, et l'état client est **optimiste avec rollback** (mise à jour instantanée de l'UI, restauration + toast en cas d'échec). La persistance est assurée par **Prisma 6 + PostgreSQL**, le tout conteneurisé (**Docker**, images publiées sur GHCR).
+Construit avec **Next.js 16** en full-stack (App Router) : la **lecture** passe par des Server Components, l'**écriture** par des Server Actions, et l'état client est **optimiste avec rollback** (mise à jour instantanée de l'UI, restauration + toast en cas d'échec). La persistance est assurée par **Prisma 6 + PostgreSQL**, le tout conteneurisé (**Docker**, images publiées sur GHCR). Il embarque aussi un **serveur MCP**, pour qu'un LLM externe (Claude Desktop, LM Studio, Ollama…) puisse lire et piloter l'app.
 
 > 💡 **Pourquoi ce projet ?** Je l'ai développé et utilisé pendant mon stage pour m'organiser. Je n'avais pas le droit d'utiliser des outils comme Notion pour des raisons de sécurité et de confidentialité — j'ai donc construit le mien, auto-hébergeable et sous mon contrôle.
 

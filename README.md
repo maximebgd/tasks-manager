@@ -8,7 +8,7 @@
 
 A full-stack, Notion-style task manager: a kanban board, a daily to-do list, a calendar and a trash bin, with Markdown notes and a light/dark theme.
 
-Built with **Next.js 16** as a full-stack app (App Router): **reads** go through Server Components, **writes** through Server Actions, and client state is **optimistic with rollback** (the UI updates instantly, then restores state + shows a toast on failure). Persistence is handled by **Prisma 6 + PostgreSQL**, all containerized (**Docker**, images published to GHCR).
+Built with **Next.js 16** as a full-stack app (App Router): **reads** go through Server Components, **writes** through Server Actions, and client state is **optimistic with rollback** (the UI updates instantly, then restores state + shows a toast on failure). Persistence is handled by **Prisma 6 + PostgreSQL**, all containerized (**Docker**, images published to GHCR). It also ships an embedded **MCP server**, so an external LLM (Claude Desktop, LM Studio, Ollama…) can read and drive the app.
 
 > 💡 **Why this project?** I built and used it during my internship to stay organized. I wasn't allowed to use tools like Notion for security and confidentiality reasons — so I built my own, self-hostable and fully under my control.
 
