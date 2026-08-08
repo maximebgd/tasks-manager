@@ -34,6 +34,12 @@ COPY --from=build /app/lib ./lib
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/next.config.ts ./next.config.ts
 
+# Exécution sans privilèges : l'utilisateur `node` (déjà présent dans l'image)
+# au lieu de root. `.next` doit lui appartenir car `next start` y écrit son
+# cache d'exécution.
+RUN chown -R node:node /app/.next
+USER node
+
 EXPOSE 3000
 
 # Applique les migrations en attente puis démarre le serveur Next.
