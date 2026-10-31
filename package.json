@@ -15,7 +15,9 @@
     "db:clear": "prisma migrate reset --skip-seed",
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
-    "docs:mcp": "tsx scripts/gen-mcp-docs.ts"
+    "docs:mcp": "tsx scripts/gen-mcp-docs.ts",
+    "test:i18n": "tsx --test tests/i18n/*.test.ts",
+    "test:sync": "tsx --test tests/sync/*.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

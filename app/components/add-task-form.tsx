@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { Priority, Task } from "@/lib/types";
 import { PRIORITIES } from "@/lib/types";
 import { TagPicker } from "./tag-picker";
+import { useLocale, taskUi } from "@/lib/i18n/task-ui";
+import { priorityText } from "@/lib/i18n/tasks";
 
 export function AddTaskForm({
   onAdd,
@@ -12,6 +14,8 @@ export function AddTaskForm({
   onAdd: (task: Task) => void;
   onClose: () => void;
 }) {
+  const locale = useLocale();
+  const text = (key: Parameters<typeof taskUi>[1]) => taskUi(locale, key);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
@@ -47,33 +51,33 @@ export function AddTaskForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-muted">
-            Titre
+            {text("title")}
           </label>
           <input
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex. Préparer la démo"
+            placeholder={text("example")}
             className={field}
           />
         </div>
 
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-muted">
-            Description
+            {text("description")}
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            placeholder="Optionnel"
+            placeholder={text("optional")}
             className={field}
           />
         </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-muted">
-            Priorité
+            {text("priority")}
           </label>
           <select
             value={priority}
@@ -82,7 +86,7 @@ export function AddTaskForm({
           >
             {PRIORITIES.map((p) => (
               <option key={p.value} value={p.value}>
-                {p.label}
+                {priorityText(locale, p.value)}
               </option>
             ))}
           </select>
@@ -90,7 +94,7 @@ export function AddTaskForm({
 
         <div>
           <label className="mb-1 block text-xs font-medium text-muted">
-            Échéance
+            {text("due")}
           </label>
           <input
             type="date"
@@ -102,7 +106,7 @@ export function AddTaskForm({
 
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-muted">
-            Tags
+            {text("tags")}
           </label>
           <TagPicker selectedIds={tagIds} onChange={setTagIds} />
         </div>
@@ -114,14 +118,14 @@ export function AddTaskForm({
           onClick={onClose}
           className="rounded-full px-4 py-2 text-sm font-medium text-muted transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-95"
         >
-          Annuler
+          {text("cancel")}
         </button>
         <button
           type="submit"
           disabled={!title.trim()}
           className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-card transition duration-200 ease-spring hover:shadow-lift hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
         >
-          Ajouter la tâche
+          {text("addTask")}
         </button>
       </div>
     </form>

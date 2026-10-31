@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "@/lib/i18n/task-ui";
+import { mcpText } from "@/lib/i18n/mcp";
 
 // Champ en lecture seule avec bouton « copier ». Utilisé pour l'URL, le token
 // et le snippet de configuration sur la page MCP.
@@ -15,6 +17,7 @@ export function CopyField({
   multiline?: boolean;
   masked?: boolean;
 }) {
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
@@ -52,8 +55,8 @@ export function CopyField({
           {masked && (
             <button
               onClick={() => setRevealed((r) => !r)}
-              title={revealed ? "Masquer" : "Afficher"}
-              aria-label={revealed ? "Masquer" : "Afficher"}
+              title={mcpText(locale, revealed ? "hide" : "show")}
+              aria-label={mcpText(locale, revealed ? "hide" : "show")}
               className={iconBtn}
             >
               {revealed ? (
@@ -89,8 +92,8 @@ export function CopyField({
           )}
           <button
             onClick={copy}
-            title={copied ? "Copié" : "Copier"}
-            aria-label={copied ? "Copié" : "Copier"}
+            title={mcpText(locale, copied ? "copiedShort" : "copy")}
+            aria-label={mcpText(locale, copied ? "copiedShort" : "copy")}
             className={iconBtn}
           >
             {copied ? (
@@ -138,6 +141,7 @@ export function CopyPromptButton({
   value: string;
   label?: string;
 }) {
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
@@ -183,7 +187,7 @@ export function CopyPromptButton({
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
         </svg>
       )}
-      {copied ? "Copié !" : label}
+      {copied ? mcpText(locale, "copied") : label}
       {!copied && (
         <svg
           width="16"

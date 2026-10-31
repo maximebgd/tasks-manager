@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Task } from "./types";
 import { useToast } from "./toast-context";
 import { useSync } from "./sync-context";
+import { useLocale } from "./i18n/task-ui";
 import {
   createTaskAction,
   purgeTaskAction,
@@ -11,7 +12,9 @@ import {
   restoreTaskAction,
   softDeleteTaskAction,
   updateTaskAction,
+  getTaskSnapshotAction,
 } from "@/app/actions/tasks";
+import { createTaskSyncState, finishTaskMutation, receiveTaskSnapshot, recordPollingFailure, recordPollingSuccess, type TaskSyncState } from "./tasks-sync";
 
 type TasksContextValue = {
   /** Tâches actives (hors corbeille). */
@@ -30,6 +33,7 @@ type TasksContextValue = {
   purgeTask: (id: string) => void;
   /** Remplace l'ordre complet (drag & drop) + persiste positions/statuts. */
   reorderTasks: (next: Task[]) => void;
+  stale: boolean;
 };
 
 const TasksContext = createContext<TasksContextValue | null>(null);
@@ -58,7 +62,12 @@ export function TasksProvider({
     ...initialTrashedTasks,
   ]);
   const toast = useToast();
+  const locale = useLocale();
+  const message = (fr: string, es: string) => locale === "es" ? es : fr;
   const sync = useSync();
+  const [syncState, setSyncState] = useState<TaskSyncState>(() => ({ ...createTaskSyncState(), active: initialTasks, trashed: initialTrashedTasks }));
+  const syncStateRef = useRef(syncState);
+  const updateSyncState = (next: TaskSyncState) => { syncStateRef.current = next; setSyncState(next); };
 
   const tasks = useMemo(() => allTasks.filter((t) => !t.deletedAt), [allTasks]);
   const trashedTasks = useMemo(
@@ -69,12 +78,38 @@ export function TasksProvider({
     [allTasks],
   );
 
-  // Persiste une mutation ; en cas d'échec, restaure l'état précédent + toast.
+  useEffect(() => {
+    let active = true;
+    const poll = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const snapshot = await getTaskSnapshotAction();
+        if (!active) return;
+        updateSyncState(recordPollingSuccess(receiveTaskSnapshot(syncStateRef.current, snapshot)));
+        const state = syncStateRef.current;
+        if (state.pendingMutations === 0 && !state.deferredSnapshot) setAllTasks([...state.active, ...state.trashed]);
+      } catch {
+        if (active) updateSyncState(recordPollingFailure(syncStateRef.current));
+      }
+    };
+    const becameVisible = () => { if (document.visibilityState === "visible") void poll(); };
+    if (document.visibilityState === "visible") void poll();
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void poll(); }, 5000);
+    document.addEventListener("visibilitychange", becameVisible);
+    return () => { active = false; window.clearInterval(timer); document.removeEventListener("visibilitychange", becameVisible); };
+  }, []);
+
+  // Writes remain tracked; external snapshots wait until the final optimistic write settles.
   const persist = (run: Promise<unknown>, snapshot: Task[], errMsg: string) => {
+    updateSyncState({ ...syncStateRef.current, pendingMutations: syncStateRef.current.pendingMutations + 1 });
     sync.track(run).catch((e) => {
       console.error(e);
       setAllTasks(snapshot);
       toast.error(errMsg);
+    }).finally(() => {
+      const { state: next, snapshotApplied } = finishTaskMutation(syncStateRef.current);
+      updateSyncState(next);
+      if (snapshotApplied) setAllTasks([...next.active, ...next.trashed]);
     });
   };
 
@@ -91,9 +126,9 @@ export function TasksProvider({
         dueDate: task.dueDate,
         tagIds: task.tagIds,
         notes: task.notes,
-      }).then(() => toast.success("Tâche ajoutée")),
+      }).then(() => toast.success(message("Tâche ajoutée", "Tarea añadida"))),
       snapshot,
-      "Impossible d'ajouter la tâche",
+      message("Impossible d'ajouter la tâche", "No se pudo añadir la tarea"),
     );
   };
 
@@ -105,7 +140,7 @@ export function TasksProvider({
         if (successMsg) toast.success(successMsg);
       }),
       snapshot,
-      "Impossible d'enregistrer la modification",
+      message("Impossible d'enregistrer la modification", "No se pudo guardar el cambio"),
     );
   };
 
@@ -115,13 +150,13 @@ export function TasksProvider({
     setAllTasks(allTasks.map((t) => (t.id === id ? { ...t, deletedAt } : t)));
     persist(
       softDeleteTaskAction(id).then(() =>
-        toast.success("Tâche déplacée dans la corbeille", {
-          label: "Annuler",
+        toast.success(message("Tâche déplacée dans la corbeille", "Tarea movida a la papelera"), {
+          label: message("Annuler", "Deshacer"),
           onClick: () => restoreTask(id),
         }),
       ),
       snapshot,
-      "Impossible de supprimer la tâche",
+      message("Impossible de supprimer la tâche", "No se pudo eliminar la tarea"),
     );
   };
 
@@ -133,9 +168,9 @@ export function TasksProvider({
       prev.map((t) => (t.id === id ? { ...t, deletedAt: null } : t)),
     );
     persist(
-      restoreTaskAction(id).then(() => toast.success("Tâche restaurée")),
+      restoreTaskAction(id).then(() => toast.success(message("Tâche restaurée", "Tarea restaurada"))),
       snapshot,
-      "Impossible de restaurer la tâche",
+      message("Impossible de restaurer la tâche", "No se pudo restaurar la tarea"),
     );
   };
 
@@ -143,9 +178,9 @@ export function TasksProvider({
     const snapshot = allTasks;
     setAllTasks(allTasks.filter((t) => t.id !== id));
     persist(
-      purgeTaskAction(id).then(() => toast.success("Supprimée définitivement")),
+      purgeTaskAction(id).then(() => toast.success(message("Supprimée définitivement", "Eliminada definitivamente"))),
       snapshot,
-      "Impossible de supprimer définitivement la tâche",
+      message("Impossible de supprimer définitivement la tâche", "No se pudo eliminar la tarea definitivamente"),
     );
   };
 
@@ -158,7 +193,7 @@ export function TasksProvider({
         next.map((t, i) => ({ id: t.id, status: t.status, position: i })),
       ),
       snapshot,
-      "Impossible de réordonner les tâches",
+      message("Impossible de réordonner les tâches", "No se pudo reordenar las tareas"),
     );
   };
 
@@ -173,6 +208,7 @@ export function TasksProvider({
         restoreTask,
         purgeTask,
         reorderTasks,
+        stale: syncState.stale,
       }}
     >
       {children}

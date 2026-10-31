@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
+import { getLocale } from "@/lib/i18n/locale";
+import { shellText } from "@/lib/i18n/shell";
+import { LocaleProvider } from "@/lib/i18n/task-ui";
 import { Nav } from "./components/nav";
 import { TasksProvider } from "@/lib/tasks-context";
 import { TagsProvider } from "@/lib/tags-context";
@@ -25,10 +29,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Gestionnaire de tâches",
-  description: "Application de gestion de tâches — todo, priorités et statuts.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = getLocale((await cookies()).get("locale")?.value);
+  return {
+    title: shellText(locale, "appTitle"),
+    description: shellText(locale, "appDescription"),
+  };
+}
 
 // L'app lit des données live/mutables depuis la BDD à chaque requête : on force
 // le rendu dynamique. Sans ça, `next build` tenterait de prérender les routes
@@ -43,16 +50,18 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [tasks, trashedTasks, tags, dailyTodos] = await Promise.all([
+  const [tasks, trashedTasks, tags, dailyTodos, cookieStore] = await Promise.all([
     getTasks(),
     getTrashedTasks(),
     getTags(),
     getAllDailyTodos(),
+    cookies(),
   ]);
+  const locale = getLocale(cookieStore.get("locale")?.value);
 
   return (
     <html
-      lang="fr"
+      lang={locale}
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
@@ -60,16 +69,17 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full flex bg-page text-content">
-        <ToastProvider>
+        <LocaleProvider value={locale}>
+        <ToastProvider locale={locale}>
           <SyncProvider>
-            <ConfirmProvider>
+            <ConfirmProvider locale={locale}>
               <TagsProvider initialTags={tags}>
                 <TasksProvider
                   initialTasks={tasks}
                   initialTrashedTasks={trashedTasks}
                 >
                   <DailyTodosProvider initialTodos={dailyTodos}>
-                    <Nav />
+                    <Nav locale={locale} />
                     <div className="flex min-w-0 flex-1 flex-col">
                       {children}
                     </div>
@@ -79,6 +89,7 @@ export default async function RootLayout({
             </ConfirmProvider>
           </SyncProvider>
         </ToastProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

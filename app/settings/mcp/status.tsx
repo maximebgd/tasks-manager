@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useLocale } from "@/lib/i18n/task-ui";
+import { mcpText } from "@/lib/i18n/mcp";
 
 // Diode d'état + panneau d'activité du serveur MCP. Interroge /api/mcp/health
 // au montage, en re-test manuel et via un léger rafraîchissement périodique.
@@ -20,25 +22,20 @@ type Health = { ok: boolean; tokenConfigured: boolean; stats: McpStats };
 
 type Phase = "checking" | "ok" | "off" | "error";
 
-const META: Record<Phase, { dot: string; label: string; pulse: boolean }> = {
-  checking: { dot: "led led-orange", label: "Vérification…", pulse: true },
-  ok: { dot: "led led-green", label: "En ligne", pulse: false },
-  off: { dot: "led led-red", label: "Inactif — aucun token configuré", pulse: false },
-  error: { dot: "led led-red", label: "Injoignable", pulse: false },
-};
-
-function relative(ts: number | null): string {
-  if (!ts) return "aucune";
+const PHASE_KEYS: Record<Phase, "checking" | "online" | "inactive" | "unreachable"> = { checking: "checking", ok: "online", off: "inactive", error: "unreachable" };
+function relative(ts: number | null, locale: "fr" | "es"): string {
+  if (!ts) return mcpText(locale, "noActivity");
   const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
-  if (s < 60) return `il y a ${s} s`;
+  if (s < 60) return mcpText(locale, "statusAgoSeconds", { count: s });
   const m = Math.round(s / 60);
-  if (m < 60) return `il y a ${m} min`;
+  if (m < 60) return mcpText(locale, "statusAgoMinutes", { count: m });
   const h = Math.round(m / 60);
-  if (h < 24) return `il y a ${h} h`;
-  return `il y a ${Math.round(h / 24)} j`;
+  if (h < 24) return mcpText(locale, "statusAgoHours", { count: h });
+  return mcpText(locale, "statusAgoDays", { count: Math.round(h / 24) });
 }
 
 export function McpStatus() {
+  const locale = useLocale();
   const [phase, setPhase] = useState<Phase>("checking");
   const [stats, setStats] = useState<McpStats | null>(null);
 
@@ -64,7 +61,7 @@ export function McpStatus() {
     return () => clearInterval(id);
   }, [check]);
 
-  const meta = META[phase];
+  const label = mcpText(locale, PHASE_KEYS[phase]);
   const tools = stats
     ? Object.entries(stats.toolCalls).sort((a, b) => b[1] - a[1])
     : [];
@@ -74,32 +71,32 @@ export function McpStatus() {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <span
-            className={`h-2.5 w-2.5 shrink-0 rounded-full ${meta.dot} ${meta.pulse ? "animate-pulse" : ""}`}
+            className={`h-2.5 w-2.5 shrink-0 rounded-full ${phase === "checking" ? "led led-orange animate-pulse" : phase === "ok" ? "led led-green" : "led led-red"}`}
             aria-hidden="true"
           />
-          <span className="text-sm font-medium text-content">{meta.label}</span>
+          <span className="text-sm font-medium text-content">{label}</span>
         </div>
         <button
           onClick={() => check()}
           disabled={phase === "checking"}
           className="rounded-xl border border-line px-3 py-1.5 text-xs font-medium text-content transition duration-200 ease-smooth hover:bg-surface-hover disabled:opacity-50"
         >
-          Re-tester
+          {mcpText(locale, "retest")}
         </button>
       </div>
 
       {phase === "ok" && stats && (
         <>
           <div className="grid grid-cols-3 gap-3">
-            <Stat label="Sessions" value={stats.sessions} />
-            <Stat label="Requêtes" value={stats.totalRequests} />
-            <Stat label="Dernière activité" value={relative(stats.lastActivityAt)} />
+            <Stat label={mcpText(locale, "sessions")} value={stats.sessions} />
+            <Stat label={mcpText(locale, "requests")} value={stats.totalRequests} />
+            <Stat label={mcpText(locale, "lastActivity")} value={relative(stats.lastActivityAt, locale)} />
           </div>
 
           {tools.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-muted">
-                Appels par outil
+                {mcpText(locale, "callsByTool")}
               </span>
               <ul className="flex flex-col gap-1">
                 {tools.map(([name, n]) => (
@@ -116,9 +113,7 @@ export function McpStatus() {
           )}
 
           <p className="text-xs text-faint">
-            Compteurs en mémoire depuis le démarrage de l'app (remis à zéro au
-            redémarrage). Le protocole MCP ne fournit pas de nombre de clients
-            connectés en temps réel — ceci reflète l'activité observée.
+            {mcpText(locale, "counters")}
           </p>
         </>
       )}

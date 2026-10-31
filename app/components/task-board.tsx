@@ -11,6 +11,8 @@ import { TaskCard } from "./task-card";
 import { AddTaskForm } from "./add-task-form";
 import { TaskPeek } from "./task-peek";
 import { TagManager } from "./tag-manager";
+import { useLocale, taskUi } from "@/lib/i18n/task-ui";
+import { priorityText, statusText } from "@/lib/i18n/tasks";
 
 type PriorityFilter = Priority | "all";
 
@@ -29,6 +31,8 @@ function byDueDateAsc(a: Task, b: Task) {
 }
 
 export function TaskBoard() {
+  const locale = useLocale();
+  const text = (key: Parameters<typeof taskUi>[1], values?: Record<string, string | number>) => taskUi(locale, key, values);
   const router = useRouter();
   const { tasks, addTask, updateTask, deleteTask, reorderTasks } = useTasks();
   const { tags: allTagDefs, reorderTags } = useTags();
@@ -158,11 +162,10 @@ export function TaskBoard() {
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-content">
-            Gestionnaire de tâches
+            {text("boardTitle")}
           </h1>
           <p className="mt-1 text-sm text-muted">
-            {stats.total} tâches · {stats.done} terminées · {stats.inProgress} en
-            cours · {stats.todo} à faire
+            {text("stats", { total: stats.total, done: stats.done, progress: stats.inProgress, todo: stats.todo })}
           </p>
         </div>
         <button
@@ -172,7 +175,7 @@ export function TaskBoard() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
           </svg>
-          Nouvelle tâche
+          {text("newTask")}
         </button>
       </header>
 
@@ -189,7 +192,8 @@ export function TaskBoard() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher…"
+            placeholder={text("search")}
+            aria-label={text("search")}
             className="w-full rounded-full border border-line bg-surface py-2 pl-9 pr-3 text-sm text-content shadow-card outline-none transition duration-200 ease-smooth placeholder:text-faint hover:border-line-strong focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />
         </div>
@@ -199,7 +203,7 @@ export function TaskBoard() {
             active={priorityFilter === "all"}
             onClick={() => setPriorityFilter("all")}
           >
-            Toutes
+            {text("all")}
           </FilterChip>
           {PRIORITIES.map((p) => (
             <FilterChip
@@ -207,7 +211,7 @@ export function TaskBoard() {
               active={priorityFilter === p.value}
               onClick={() => setPriorityFilter(p.value)}
             >
-              {p.label}
+              {priorityText(locale, p.value)}
             </FilterChip>
           ))}
         </div>
@@ -216,7 +220,8 @@ export function TaskBoard() {
           <button
             onClick={() => setSortByDue((v) => !v)}
             aria-pressed={sortByDue}
-            title="Trier par échéance la plus proche en haut"
+            title={text("sortDue")}
+            aria-label={text("sortDue")}
             className={`inline-flex items-center justify-center rounded-full p-1.5 transition duration-200 ease-smooth active:scale-95 ${
               sortByDue
                 ? "bg-accent text-white"
@@ -234,7 +239,7 @@ export function TaskBoard() {
 
       {allTagDefs.length > 0 && (
         <div className="mb-6 flex flex-wrap items-center gap-y-1.5">
-          <span className="mr-1 text-xs font-medium text-faint">Tags</span>
+          <span className="mr-1 text-xs font-medium text-faint">{text("tags")}</span>
           {usedTags.map((tag) => {
             const active = selectedTagIds.includes(tag.id);
             const isDragging = draggingTagId === tag.id;
@@ -274,7 +279,7 @@ export function TaskBoard() {
                     moveTag(tag.id);
                   }}
                   aria-pressed={active}
-                  title="Glisser pour réordonner"
+                  title={text("reorder")}
                   className={`cursor-grab rounded px-2 py-0.5 text-xs font-medium transition active:cursor-grabbing ${
                     isDragging ? "opacity-40" : ""
                   } ${
@@ -293,7 +298,7 @@ export function TaskBoard() {
               onClick={() => setSelectedTagIds([])}
               className="ml-1 text-xs font-medium text-muted transition hover:text-content"
             >
-              Effacer
+              {text("clear")}
             </button>
           )}
           <div className="ml-2">
@@ -332,7 +337,7 @@ export function TaskBoard() {
               <div className="mb-3 flex items-center gap-2 px-1">
                 <span className={`h-2 w-2 rounded-full ${columnAccent[col.value]}`} />
                 <h2 className="text-sm font-medium text-content">
-                  {col.label}
+                  {statusText(locale, col.value)}
                 </h2>
                 <span className="ml-auto rounded-full bg-surface px-2 py-0.5 text-xs font-medium text-muted">
                   {items.length}
@@ -364,7 +369,7 @@ export function TaskBoard() {
                 ))}
                 {items.length === 0 && (
                   <p className="rounded-lg border border-dashed border-line-strong px-3 py-6 text-center text-xs text-faint">
-                    Aucune tâche
+                    {text("none")}
                   </p>
                 )}
               </div>

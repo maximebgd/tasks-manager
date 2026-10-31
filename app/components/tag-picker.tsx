@@ -6,6 +6,7 @@ import { TAG_COLORS } from "@/lib/types";
 import { useTags } from "@/lib/tags-context";
 import { useConfirm } from "@/lib/confirm-context";
 import { tagColorClass, tagDotClass } from "./badges";
+import { useLocale, taskUi } from "@/lib/i18n/task-ui";
 
 /**
  * Sélecteur d'étiquettes réutilisable (fiche + formulaire de création).
@@ -19,6 +20,8 @@ export function TagPicker({
   selectedIds: string[];
   onChange: (ids: string[]) => void;
 }) {
+  const locale = useLocale();
+  const text = (key: Parameters<typeof taskUi>[1], values?: Record<string, string | number>) => taskUi(locale, key, values);
   const { tags, getTag, addTag, updateTag, deleteTag } = useTags();
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
@@ -86,9 +89,9 @@ export function TagPicker({
 
   async function remove(id: string, name: string) {
     const ok = await confirm({
-      title: "Supprimer l'étiquette",
-      message: `« ${name} » sera retirée de toutes les tâches. Cette action est irréversible.`,
-      confirmLabel: "Supprimer",
+      title: text("removeTag"),
+      message: `« ${name} » ${text("tagConfirm")}`,
+      confirmLabel: text("delete"),
       danger: true,
     });
     if (!ok) return;
@@ -109,7 +112,7 @@ export function TagPicker({
             <button
               type="button"
               onClick={() => toggle(t.id)}
-              aria-label={`Retirer ${t.name}`}
+              aria-label={`${text("remove")} ${t.name}`}
               className="opacity-60 transition hover:opacity-100"
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
@@ -126,7 +129,7 @@ export function TagPicker({
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
           </svg>
-          Étiquette
+          {text("tag")}
         </button>
       </div>
 
@@ -142,7 +145,8 @@ export function TagPicker({
                 createAndAssign();
               }
             }}
-            placeholder="Rechercher ou créer…"
+            placeholder={text("findOrCreate")}
+            aria-label={text("findOrCreate")}
             className="mb-1.5 w-full rounded-lg border border-line bg-surface-muted px-2.5 py-1.5 text-sm text-content outline-none transition duration-200 ease-smooth focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />
 
@@ -172,7 +176,7 @@ export function TagPicker({
                           <button
                             key={c}
                             type="button"
-                            aria-label={`Couleur ${c}`}
+                            aria-label={text("tagColor", { color: c })}
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => updateTag(t.id, { color: c })}
                             className={`h-4 w-4 rounded-full ${tagDotClass[c]} ${
@@ -205,7 +209,7 @@ export function TagPicker({
                       <button
                         type="button"
                         onClick={() => startEdit(t.id, t.name)}
-                        aria-label="Modifier l'étiquette"
+                        aria-label={text("editTag")}
                         className="shrink-0 rounded p-1 text-faint opacity-0 transition hover:bg-surface-hover hover:text-content group-hover:opacity-100"
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -216,7 +220,7 @@ export function TagPicker({
                       <button
                         type="button"
                         onClick={() => remove(t.id, t.name)}
-                        aria-label="Supprimer l'étiquette"
+                        aria-label={text("removeTag")}
                         className="shrink-0 rounded p-1 text-faint opacity-0 transition hover:bg-tag-red hover:text-tag-red-text group-hover:opacity-100"
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -238,13 +242,13 @@ export function TagPicker({
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-                Créer «&nbsp;{query.trim()}&nbsp;»
+                {text("create")} «&nbsp;{query.trim()}&nbsp;»
               </button>
             )}
 
             {filtered.length === 0 && !q && (
               <p className="px-1.5 py-2 text-xs text-faint">
-                Aucune étiquette. Tapez pour en créer une.
+                {text("noTag")}
               </p>
             )}
           </div>

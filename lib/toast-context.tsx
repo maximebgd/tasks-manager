@@ -9,6 +9,9 @@ import {
   useState,
 } from "react";
 
+import type { Locale } from "@/lib/i18n/locale";
+import { shellText } from "@/lib/i18n/shell";
+
 type ToastType = "success" | "error";
 /** Bouton d'action optionnel (ex. « Annuler ») affiché dans le toast. */
 type ToastAction = { label: string; onClick: () => void };
@@ -39,7 +42,7 @@ let counter = 0;
  * un compteur, au lieu de s'empiler : une suppression en masse n'affiche donc
  * qu'un toast « ×N », et « Annuler » restaure l'ensemble du lot.
  */
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({ children, locale }: { children: React.ReactNode; locale: Locale }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   // Miroir synchrone de `toasts` pour décider du regroupement hors du updater.
   const toastsRef = useRef<Toast[]>([]);
@@ -130,6 +133,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             className="glass pointer-events-auto flex items-center gap-2.5 rounded-xl border border-glass-border px-3.5 py-2.5 text-sm text-content shadow-pop animate-[toast-in_200ms_var(--ease-spring)]"
           >
             <button
+              aria-label={shellText(locale, "closeToast")}
               onClick={() => remove(t.id)}
               className="flex flex-1 items-center gap-2.5 text-left"
             >

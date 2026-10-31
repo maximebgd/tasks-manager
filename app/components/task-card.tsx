@@ -5,24 +5,9 @@ import type { Status, Task } from "@/lib/types";
 import { STATUSES } from "@/lib/types";
 import { daysBetween, todayISO } from "@/lib/date";
 import { useTags } from "@/lib/tags-context";
-import { PriorityBadge, Tag } from "./badges";
-
-function formatDate(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-  });
-}
-
-const plural = (n: number) => (n > 1 ? "s" : "");
-
-/** Décompte relatif à aujourd'hui : « aujourd'hui », « dans N jours », « en retard de N jours ». */
-function relativeDue(diff: number) {
-  if (diff === 0) return "aujourd'hui";
-  if (diff > 0) return `dans ${diff} jour${plural(diff)}`;
-  const late = -diff;
-  return `en retard de ${late} jour${plural(late)}`;
-}
+import { Tag } from "./badges";
+import { useLocale, taskUi } from "@/lib/i18n/task-ui";
+import { formatTaskDate, relativeDueText, statusText } from "@/lib/i18n/tasks";
 
 export function TaskCard({
   task,
@@ -49,6 +34,8 @@ export function TaskCard({
   onCardDrop: (targetId: string, position: "before" | "after") => void;
   dropPosition: "before" | "after" | null;
 }) {
+  const locale = useLocale();
+  const text = (key: Parameters<typeof taskUi>[1]) => taskUi(locale, key);
   const { getTag } = useTags();
   const isDone = task.status === "done";
   const today = todayISO();
@@ -57,7 +44,7 @@ export function TaskCard({
   // Décompte affiché uniquement pour les tâches non terminées.
   const dueCountdown =
     !isDone && task.dueDate !== null
-      ? relativeDue(daysBetween(today, task.dueDate))
+      ? relativeDueText(daysBetween(today, task.dueDate), locale)
       : null;
   const dueColor = isOverdue
     ? "text-tag-red-text"
@@ -118,7 +105,7 @@ export function TaskCard({
       draggable
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
-      title="Clic : aperçu · Double-clic : ouvrir la fiche"
+      title={text("clickHelp")}
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", task.id);
@@ -142,7 +129,7 @@ export function TaskCard({
             e.stopPropagation();
             onDelete(task.id);
           }}
-          aria-label="Supprimer la tâche"
+          aria-label={text("deleteTask")}
           className="shrink-0 rounded p-1 text-faint opacity-0 transition hover:bg-tag-red hover:text-tag-red-text group-hover:opacity-100"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -158,7 +145,9 @@ export function TaskCard({
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <PriorityBadge priority={task.priority} />
+        <span className="inline-flex items-center gap-1.5 rounded bg-tag-yellow px-1.5 py-0.5 text-xs font-medium text-tag-yellow-text">
+          {locale === "es" ? ({ low: "Baja", medium: "Media", high: "Alta" } as const)[task.priority] : ({ low: "Basse", medium: "Moyenne", high: "Haute" } as const)[task.priority]}
+        </span>
         {task.tagIds.map((id) => {
           const tag = getTag(id);
           return tag ? (
@@ -176,11 +165,11 @@ export function TaskCard({
               <rect x="3" y="4" width="18" height="18" rx="2" />
               <path d="M16 2v4M8 2v4M3 10h18" />
             </svg>
-            {formatDate(task.dueDate)}
+            {formatTaskDate(task.dueDate, locale)}
             {dueCountdown && ` · ${dueCountdown}`}
           </span>
         ) : (
-          <span className="text-xs text-faint">Pas d&apos;échéance</span>
+          <span className="text-xs text-faint">{text("noDue")}</span>
         )}
 
         <select
@@ -188,12 +177,12 @@ export function TaskCard({
           onChange={(e) => onStatusChange(task.id, e.target.value as Status)}
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={(e) => e.stopPropagation()}
-          aria-label="Changer le statut"
+          aria-label={text("changeStatus")}
           className="cursor-pointer rounded-lg border border-line bg-surface-muted px-1.5 py-1 text-xs font-medium text-muted outline-none transition duration-200 ease-smooth hover:border-line-strong focus:border-accent"
         >
           {STATUSES.map((s) => (
             <option key={s.value} value={s.value}>
-              {s.label}
+              {statusText(locale, s.value)}
             </option>
           ))}
         </select>

@@ -1,5 +1,7 @@
 "use client";
 
+import type { Locale } from "@/lib/i18n/locale";
+import { shellText } from "@/lib/i18n/shell";
 import {
   createContext,
   useCallback,
@@ -32,7 +34,7 @@ const ConfirmContext = createContext<ConfirmApi | null>(null);
  * Stylé avec les tokens du thème → jour/nuit automatique. Échap / clic hors du
  * dialogue = annuler, Entrée = confirmer.
  */
-export function ConfirmProvider({ children }: { children: React.ReactNode }) {
+export function ConfirmProvider({ children, locale }: { children: React.ReactNode; locale: Locale }) {
   const [options, setOptions] = useState<ConfirmOptions | null>(null);
   const resolverRef = useRef<((value: boolean) => void) | null>(null);
 
@@ -74,7 +76,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             className="w-full max-w-sm rounded-2xl border border-line bg-surface p-5 shadow-pop animate-[pop-in_260ms_var(--ease-spring)]"
           >
             <h2 className="text-base font-semibold text-content">
-              {options.title ?? "Confirmer"}
+              {options.title ?? shellText(locale, "confirm")}
             </h2>
             <p className="mt-1.5 text-sm text-muted">{options.message}</p>
             <div className="mt-5 flex justify-end gap-2">
@@ -83,7 +85,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                 onClick={() => close(false)}
                 className="rounded-full border border-line px-3.5 py-1.5 text-sm font-medium text-muted transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-95"
               >
-                {options.cancelLabel ?? "Annuler"}
+                {options.cancelLabel ?? shellText(locale, "cancel")}
               </button>
               <button
                 type="button"
@@ -93,7 +95,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                   options.danger ? "bg-danger" : "bg-accent"
                 }`}
               >
-                {options.confirmLabel ?? "Confirmer"}
+                {options.confirmLabel ?? shellText(locale, "confirm")}
               </button>
             </div>
           </div>

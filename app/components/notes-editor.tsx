@@ -5,6 +5,7 @@ import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
+import { useLocale, taskUi } from "@/lib/i18n/task-ui";
 
 /**
  * Éditeur de notes WYSIWYG (type Notion) : on écrit directement dans le rendu,
@@ -32,6 +33,8 @@ export function NotesEditor({
   onChange: (markdown: string) => void;
   minHeightClass: string;
 }) {
+  const locale = useLocale();
+  const text = (key: Parameters<typeof taskUi>[1]) => taskUi(locale, key);
   // Réf pour toujours appeler la dernière closure sans recréer l'éditeur.
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -49,7 +52,7 @@ export function NotesEditor({
         },
       }),
       Placeholder.configure({
-        placeholder: "Écrire des notes… (Markdown supporté)",
+        placeholder: text("notesPlaceholder"),
       }),
       Markdown.configure({ html: true, linkify: true, transformPastedText: true }),
     ],
@@ -77,7 +80,7 @@ export function NotesEditor({
     <div>
       <div className="mb-1 flex items-center justify-between gap-2">
         <label className="text-xs font-medium text-muted">{label}</label>
-        <Toolbar editor={editor} />
+        <Toolbar editor={editor} locale={locale} />
       </div>
       <EditorContent editor={editor} />
     </div>
@@ -88,9 +91,10 @@ const isMac =
   typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 const mod = isMac ? "⌘" : "Ctrl";
 
-function Toolbar({ editor }: { editor: Editor | null }) {
+function Toolbar({ editor, locale }: { editor: Editor | null; locale: import("@/lib/i18n/locale").Locale }) {
   if (!editor) return null;
 
+  const text = (key: Parameters<typeof taskUi>[1]) => taskUi(locale, key);
   const btn = (active: boolean) =>
     `flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-sm transition duration-200 ease-smooth hover:bg-surface-hover ${
       active ? "bg-surface-hover text-content" : "text-muted hover:text-content"
@@ -104,7 +108,7 @@ function Toolbar({ editor }: { editor: Editor | null }) {
       return;
     }
     const prev = editor.getAttributes("link").href as string | undefined;
-    const url = window.prompt("Lien (URL)", prev ?? "https://");
+    const url = window.prompt(text("linkUrl"), prev ?? "https://");
     if (url === null) return; // annulé
     if (url === "") {
       editor.chain().focus().unsetLink().run();
@@ -115,46 +119,46 @@ function Toolbar({ editor }: { editor: Editor | null }) {
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-0.5">
-      <button type="button" title={`Gras (${mod}+B)`} aria-label="Gras" onMouseDown={guard}
+      <button type="button" title={`${text("bold")} (${mod}+B)`} aria-label={text("bold")} onMouseDown={guard}
         onClick={() => editor.chain().focus().toggleBold().run()} className={btn(editor.isActive("bold"))}>
         <span className="font-bold">B</span>
       </button>
-      <button type="button" title={`Italique (${mod}+I)`} aria-label="Italique" onMouseDown={guard}
+      <button type="button" title={`${text("italic")} (${mod}+I)`} aria-label={text("italic")} onMouseDown={guard}
         onClick={() => editor.chain().focus().toggleItalic().run()} className={btn(editor.isActive("italic"))}>
         <span className="italic">I</span>
       </button>
-      <button type="button" title={`Souligné (${mod}+U)`} aria-label="Souligné" onMouseDown={guard}
+      <button type="button" title={`${text("underline")} (${mod}+U)`} aria-label={text("underline")} onMouseDown={guard}
         onClick={() => editor.chain().focus().toggleUnderline().run()} className={btn(editor.isActive("underline"))}>
         <span className="underline">U</span>
       </button>
-      <button type="button" title="Barré" aria-label="Barré" onMouseDown={guard}
+      <button type="button" title={text("strike")} aria-label={text("strike")} onMouseDown={guard}
         onClick={() => editor.chain().focus().toggleStrike().run()} className={btn(editor.isActive("strike"))}>
         <span className="line-through">S</span>
       </button>
-      <button type="button" title="Code" aria-label="Code" onMouseDown={guard}
+      <button type="button" title={text("code")} aria-label={text("code")} onMouseDown={guard}
         onClick={() => editor.chain().focus().toggleCode().run()} className={btn(editor.isActive("code"))}>
         <span className="font-mono">{"<>"}</span>
       </button>
 
       <span className="mx-0.5 h-4 w-px bg-line" aria-hidden />
 
-      <button type="button" title="Titre 1" aria-label="Titre 1" onMouseDown={guard}
+      <button type="button" title={`${text("heading")} 1`} aria-label={`${text("heading")} 1`} onMouseDown={guard}
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={btn(editor.isActive("heading", { level: 1 }))}>
         H1
       </button>
-      <button type="button" title="Titre 2" aria-label="Titre 2" onMouseDown={guard}
+      <button type="button" title={`${text("heading")} 2`} aria-label={`${text("heading")} 2`} onMouseDown={guard}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={btn(editor.isActive("heading", { level: 2 }))}>
         H2
       </button>
-      <button type="button" title="Titre 3" aria-label="Titre 3" onMouseDown={guard}
+      <button type="button" title={`${text("heading")} 3`} aria-label={`${text("heading")} 3`} onMouseDown={guard}
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={btn(editor.isActive("heading", { level: 3 }))}>
         H3
       </button>
-      <button type="button" title="Liste à puces" aria-label="Liste à puces" onMouseDown={guard}
+      <button type="button" title={text("bulletList")} aria-label={text("bulletList")} onMouseDown={guard}
         onClick={() => editor.chain().focus().toggleBulletList().run()} className={btn(editor.isActive("bulletList"))}>
         <ListIcon />
       </button>
-      <button type="button" title={`Lien (${mod}+K)`} aria-label="Lien" onMouseDown={guard}
+      <button type="button" title={`${text("link")} (${mod}+K)`} aria-label={text("link")} onMouseDown={guard}
         onClick={setLink} className={btn(editor.isActive("link"))}>
         <LinkIcon />
       </button>

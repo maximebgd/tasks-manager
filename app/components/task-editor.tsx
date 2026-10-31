@@ -6,6 +6,8 @@ import { PRIORITIES, STATUSES } from "@/lib/types";
 import { useTasks } from "@/lib/tasks-context";
 import { TagPicker } from "./tag-picker";
 import { NotesEditor } from "./notes-editor";
+import { useLocale, taskUi } from "@/lib/i18n/task-ui";
+import { priorityText, statusText } from "@/lib/i18n/tasks";
 
 /**
  * Champs éditables d'une tâche, partagés par l'aperçu (`peek`) et la page
@@ -19,17 +21,19 @@ export function TaskEditor({
   taskId: string;
   variant: "peek" | "page";
 }) {
+  const locale = useLocale();
+  const text = (key: Parameters<typeof taskUi>[1]) => taskUi(locale, key);
   const { tasks, updateTask } = useTasks();
   const task = tasks.find((t) => t.id === taskId);
 
   if (!task) {
     return (
       <div className="py-10 text-center text-sm text-muted">
-        Cette tâche est introuvable.
+        {text("missing")}
         {variant === "page" && (
           <div className="mt-3">
             <Link href="/" className="text-accent-text hover:underline">
-              Retour au tableau
+              {text("backBoard")}
             </Link>
           </div>
         )}
@@ -45,7 +49,8 @@ export function TaskEditor({
       <input
         value={task.title}
         onChange={(e) => updateTask(task.id, { title: e.target.value })}
-        placeholder="Sans titre"
+        placeholder={text("noTitle")}
+        aria-label={text("title")}
         className={`w-full bg-transparent font-bold tracking-tight text-content outline-none placeholder:text-faint ${
           variant === "page" ? "text-3xl" : "text-xl"
         }`}
@@ -53,7 +58,7 @@ export function TaskEditor({
 
       <div className="mt-4 flex flex-col gap-0.5">
         <PropertyRow
-          label="Statut"
+          label={text("status")}
           icon={
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="9" />
@@ -70,14 +75,14 @@ export function TaskEditor({
           >
             {STATUSES.map((s) => (
               <option key={s.value} value={s.value}>
-                {s.label}
+                {statusText(locale, s.value)}
               </option>
             ))}
           </select>
         </PropertyRow>
 
         <PropertyRow
-          label="Priorité"
+          label={text("priority")}
           icon={
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
@@ -94,14 +99,14 @@ export function TaskEditor({
           >
             {PRIORITIES.map((p) => (
               <option key={p.value} value={p.value}>
-                {p.label}
+                {priorityText(locale, p.value)}
               </option>
             ))}
           </select>
         </PropertyRow>
 
         <PropertyRow
-          label="Échéance"
+          label={text("due")}
           icon={
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -120,7 +125,7 @@ export function TaskEditor({
         </PropertyRow>
 
         <PropertyRow
-          label="Tags"
+          label={text("tags")}
           icon={
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.6 13.4 12 22l-9-9V3h10z" />
@@ -137,7 +142,7 @@ export function TaskEditor({
 
       <div className="mt-5 border-t border-line pt-4">
         <label className="mb-1 block text-xs font-medium text-muted">
-          Description
+          {text("description")}
         </label>
         <textarea
           value={task.description ?? ""}
@@ -145,7 +150,7 @@ export function TaskEditor({
             updateTask(task.id, { description: e.target.value })
           }
           rows={2}
-          placeholder="Résumé court…"
+          placeholder={text("summary")}
           className="w-full resize-none bg-transparent text-sm leading-relaxed text-content outline-none placeholder:text-faint"
         />
       </div>
@@ -153,7 +158,7 @@ export function TaskEditor({
       <div className="mt-3">
         <NotesEditor
           key={task.id}
-          label="Notes"
+          label={text("notes")}
           value={task.notes ?? ""}
           onChange={(next) => updateTask(task.id, { notes: next })}
           minHeightClass={variant === "page" ? "min-h-[16rem]" : "min-h-[8rem]"}

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Locale } from "@/lib/i18n/locale";
+import { shellText } from "@/lib/i18n/shell";
 
 type Theme = "light" | "dark";
 
@@ -9,7 +11,7 @@ function current(): Theme {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ locale }: { locale: Locale }) {
   const [theme, setTheme] = useState<Theme>("light");
 
   // Synchronise l'état React avec la classe posée par le script inline (anti-FOUC).
@@ -33,8 +35,8 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      aria-label={isDark ? "Passer en mode jour" : "Passer en mode nuit"}
-      title={isDark ? "Mode jour" : "Mode nuit"}
+      aria-label={shellText(locale, isDark ? "themeToLight" : "themeToDark")}
+      title={shellText(locale, isDark ? "themeLight" : "themeDark")}
       className="grid h-8 w-8 place-items-center rounded-full text-muted transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-90"
     >
       {isDark ? (

@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { headers } from "next/headers";
+import { getLocaleFromCookieHeader } from "@/lib/i18n/locale";
+import { mcpText } from "@/lib/i18n/mcp";
 import {
   CALL_EXAMPLE,
   MCP_TYPES,
@@ -11,20 +14,20 @@ import {
 // outils). Aucun accès disque : tout est bundlé.
 export const dynamic = "force-dynamic";
 
-function ParamsTable({ params }: { params: ToolParam[] }) {
+function ParamsTable({ params, locale }: { params: ToolParam[]; locale: "fr" | "es" }) {
   if (params.length === 0) {
-    return <p className="mt-2 text-sm text-muted">Aucun paramètre.</p>;
+    return <p className="mt-2 text-sm text-muted">{mcpText(locale, "noParams")}</p>;
   }
   return (
     <div className="mt-3 overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-faint">
-            <th className="py-2 pr-3 font-medium">Paramètre</th>
-            <th className="py-2 pr-3 font-medium">Type</th>
-            <th className="py-2 pr-3 font-medium">Requis</th>
-            <th className="py-2 pr-3 font-medium">Défaut</th>
-            <th className="py-2 font-medium">Description</th>
+            <th className="py-2 pr-3 font-medium">{mcpText(locale, "parameter")}</th>
+            <th className="py-2 pr-3 font-medium">{mcpText(locale, "type")}</th>
+            <th className="py-2 pr-3 font-medium">{mcpText(locale, "required")}</th>
+            <th className="py-2 pr-3 font-medium">{mcpText(locale, "default")}</th>
+            <th className="py-2 font-medium">{mcpText(locale, "description")}</th>
           </tr>
         </thead>
         <tbody>
@@ -38,9 +41,9 @@ function ParamsTable({ params }: { params: ToolParam[] }) {
               </td>
               <td className="py-2 pr-3">
                 {p.required ? (
-                  <span className="font-medium text-content">oui</span>
+                  <span className="font-medium text-content">{mcpText(locale, "yes")}</span>
                 ) : (
-                  <span className="text-faint">non</span>
+                  <span className="text-faint">{mcpText(locale, "no")}</span>
                 )}
               </td>
               <td className="py-2 pr-3">
@@ -59,7 +62,9 @@ function ParamsTable({ params }: { params: ToolParam[] }) {
   );
 }
 
-export default function McpToolsPage() {
+export default async function McpToolsPage() {
+  const h = await headers();
+  const locale = getLocaleFromCookieHeader(h.get("cookie") ?? undefined);
   const groups = toolsByGroup();
 
   return (
@@ -68,15 +73,15 @@ export default function McpToolsPage() {
         href="/settings/mcp"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition duration-200 ease-smooth hover:text-content"
       >
-        <span aria-hidden="true">←</span> Configuration MCP
+        <span aria-hidden="true">←</span> {mcpText(locale, "back")}
       </Link>
 
       <header className="mb-8">
         <h1 className="text-2xl font-semibold text-content">
-          Référence des outils MCP
+          {mcpText(locale, "referenceTitle")}
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Chaque outil est appelé via la méthode JSON-RPC{" "}
+          {mcpText(locale, "referenceIntro")}{" "}{/*
           <code className="font-mono text-content">tools/call</code>, avec
           l'en-tête{" "}
           <code className="font-mono text-content">
@@ -85,13 +90,14 @@ export default function McpToolsPage() {
           . Les retours sont du texte (JSON pour les lectures/créations, message
           de confirmation sinon). Les identifiants sont générés par la base — le
           LLM ne les fournit jamais à la création.
+          */}
         </p>
       </header>
 
       {/* Types & énumérations */}
       <section className="mb-10">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-faint">
-          Types &amp; énumérations
+          {mcpText(locale, "types")}
         </h2>
         <div className="overflow-x-auto rounded-2xl border border-line bg-surface p-4 shadow-card">
           <table className="w-full border-collapse text-sm">
@@ -127,9 +133,9 @@ export default function McpToolsPage() {
                   {tool.name}
                 </h3>
                 <p className="mt-1.5 text-sm text-muted">{tool.summary}</p>
-                <ParamsTable params={tool.params} />
+                <ParamsTable params={tool.params} locale={locale} />
                 <p className="mt-3 text-sm text-muted">
-                  <span className="font-medium text-content">Retour : </span>
+                  <span className="font-medium text-content">{mcpText(locale, "returns")} </span>
                   {tool.returns.replace(/`/g, "")}
                 </p>
               </article>
@@ -141,15 +147,13 @@ export default function McpToolsPage() {
       {/* Exemple */}
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-faint">
-          Exemple d'appel
+          {mcpText(locale, "example")}
         </h2>
         <pre className="overflow-x-auto rounded-2xl border border-line bg-surface-muted p-4 font-mono text-xs text-content">
           {CALL_EXAMPLE}
         </pre>
         <p className="mt-3 text-sm text-muted">
-          La liste des outils est aussi introspectable à chaud via la méthode{" "}
-          <code className="font-mono text-content">tools/list</code> (noms,
-          descriptions et schémas JSON Schema).
+          {mcpText(locale, "introspection")}
         </p>
       </section>
     </main>

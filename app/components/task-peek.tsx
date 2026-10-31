@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useTasks } from "@/lib/tasks-context";
 import { TaskEditor } from "./task-editor";
+import { useLocale, taskUi } from "@/lib/i18n/task-ui";
 
 /** Petit panneau d'aperçu ouvert au simple clic sur une carte du tableau. */
 export function TaskPeek({
@@ -14,6 +15,8 @@ export function TaskPeek({
   onClose: () => void;
   onOpenPage: () => void;
 }) {
+  const locale = useLocale();
+  const text = (key: Parameters<typeof taskUi>[1]) => taskUi(locale, key);
   const { deleteTask } = useTasks();
 
   useEffect(() => {
@@ -41,7 +44,7 @@ export function TaskPeek({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 3h6v6M14 10l7-7M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
             </svg>
-            Ouvrir en pleine page
+            {text("openPage")}
           </button>
           <div className="flex items-center gap-0.5">
             <button
@@ -49,7 +52,7 @@ export function TaskPeek({
                 deleteTask(taskId);
                 onClose();
               }}
-              aria-label="Supprimer la tâche"
+              aria-label={text("deleteTask")}
               className="grid h-7 w-7 place-items-center rounded-md text-faint transition hover:bg-tag-red hover:text-tag-red-text"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -58,7 +61,7 @@ export function TaskPeek({
             </button>
             <button
               onClick={onClose}
-              aria-label="Fermer"
+              aria-label={text("close")}
               className="grid h-7 w-7 place-items-center rounded-md text-muted transition hover:bg-surface-hover hover:text-content"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -4,6 +4,7 @@ import { createContext, useContext, useMemo, useState } from "react";
 import type { Tag, TagColor } from "./types";
 import { useToast } from "./toast-context";
 import { useSync } from "./sync-context";
+import { useLocale } from "./i18n/task-ui";
 import {
   createTagAction,
   deleteTagAction,
@@ -43,6 +44,8 @@ export function TagsProvider({
 }) {
   const [tags, setTags] = useState<Tag[]>(initialTags);
   const toast = useToast();
+  const locale = useLocale();
+  const message = (fr: string, es: string) => locale === "es" ? es : fr;
   const sync = useSync();
 
   const byId = useMemo(() => {
@@ -68,7 +71,7 @@ export function TagsProvider({
     persist(
       createTagAction(tag),
       snapshot,
-      "Impossible de créer l'étiquette",
+      message("Impossible de créer l'étiquette", "No se pudo crear la etiqueta"),
     );
     return tag;
   };
@@ -79,7 +82,7 @@ export function TagsProvider({
     persist(
       updateTagAction(id, patch),
       snapshot,
-      "Impossible de modifier l'étiquette",
+      message("Impossible de modifier l'étiquette", "No se pudo modificar la etiqueta"),
     );
   };
 
@@ -87,9 +90,9 @@ export function TagsProvider({
     const snapshot = tags;
     setTags(tags.filter((t) => t.id !== id));
     persist(
-      deleteTagAction(id).then(() => toast.success("Étiquette supprimée")),
+      deleteTagAction(id).then(() => toast.success(message("Étiquette supprimée", "Etiqueta eliminada"))),
       snapshot,
-      "Impossible de supprimer l'étiquette",
+      message("Impossible de supprimer l'étiquette", "No se pudo eliminar la etiqueta"),
     );
   };
 
@@ -99,7 +102,7 @@ export function TagsProvider({
     persist(
       reorderTagsAction(next.map((t, i) => ({ id: t.id, position: i }))),
       snapshot,
-      "Impossible de réordonner les étiquettes",
+      message("Impossible de réordonner les étiquettes", "No se pudo reordenar las etiquetas"),
     );
   };
 

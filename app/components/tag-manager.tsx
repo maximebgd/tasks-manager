@@ -5,6 +5,7 @@ import { TAG_COLORS } from "@/lib/types";
 import { useTags } from "@/lib/tags-context";
 import { useConfirm } from "@/lib/confirm-context";
 import { tagDotClass } from "./badges";
+import { useLocale, taskUi } from "@/lib/i18n/task-ui";
 
 /**
  * Panneau global de gestion des étiquettes (bouton « Gérer » + popover),
@@ -14,6 +15,8 @@ import { tagDotClass } from "./badges";
  * Toute la persistance passe par le store partagé `useTags`.
  */
 export function TagManager() {
+  const locale = useLocale();
+  const text = (key: Parameters<typeof taskUi>[1], values?: Record<string, string | number>) => taskUi(locale, key, values);
   const { tags, addTag, updateTag, deleteTag, reorderTags } = useTags();
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
@@ -54,9 +57,9 @@ export function TagManager() {
 
   async function remove(id: string, name: string) {
     const ok = await confirm({
-      title: "Supprimer l'étiquette",
-      message: `« ${name} » sera retirée de toutes les tâches. Cette action est irréversible.`,
-      confirmLabel: "Supprimer",
+      title: text("removeTag"),
+      message: `« ${name} » ${text("tagConfirm")}`,
+      confirmLabel: text("delete"),
       danger: true,
     });
     if (!ok) return;
@@ -67,7 +70,7 @@ export function TagManager() {
   function createTag() {
     const color = TAG_COLORS[tags.length % TAG_COLORS.length];
     // Nom par défaut unique (contrainte @unique sur Tag.name).
-    const base = "Nouvelle étiquette";
+    const base = text("newTag");
     const taken = new Set(tags.map((t) => t.name));
     let name = base;
     for (let i = 2; taken.has(name); i++) name = `${base} ${i}`;
@@ -98,13 +101,13 @@ export function TagManager() {
           <path d="M12 20h9" />
           <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
         </svg>
-        Gérer
+        {text("manage")}
       </button>
 
       {open && (
         <div className="glass absolute left-0 top-full z-30 mt-1.5 w-72 rounded-xl border border-glass-border p-2 shadow-pop animate-[pop-in_200ms_var(--ease-spring)]">
           <div className="mb-1 px-1 text-xs font-semibold text-faint">
-            Gérer les étiquettes
+            {text("manageTags")}
           </div>
 
           <div className="max-h-72 overflow-y-auto">
@@ -144,8 +147,8 @@ export function TagManager() {
                       setDraggingId(null);
                       setDragOverId(null);
                     }}
-                    aria-label="Réordonner"
-                    title="Glisser pour réordonner"
+                    aria-label={text("reorderTags")}
+                    title={text("reorder")}
                     className="shrink-0 cursor-grab px-0.5 text-faint transition hover:text-muted active:cursor-grabbing"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -176,7 +179,7 @@ export function TagManager() {
                           <button
                             key={c}
                             type="button"
-                            aria-label={`Couleur ${c}`}
+                            aria-label={text("tagColor", { color: c })}
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => updateTag(t.id, { color: c })}
                             className={`h-4 w-4 rounded-full ${tagDotClass[c]} ${
@@ -203,7 +206,7 @@ export function TagManager() {
                       <button
                         type="button"
                         onClick={() => startEdit(t.id, t.name)}
-                        aria-label="Modifier l'étiquette"
+                        aria-label={text("editTag")}
                         className="shrink-0 rounded p-1 text-faint opacity-0 transition hover:bg-surface-hover hover:text-content group-hover:opacity-100"
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -214,7 +217,7 @@ export function TagManager() {
                       <button
                         type="button"
                         onClick={() => remove(t.id, t.name)}
-                        aria-label="Supprimer l'étiquette"
+                        aria-label={text("removeTag")}
                         className="shrink-0 rounded p-1 text-faint opacity-0 transition hover:bg-tag-red hover:text-tag-red-text group-hover:opacity-100"
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -229,7 +232,7 @@ export function TagManager() {
 
             {tags.length === 0 && (
               <p className="px-1.5 py-2 text-xs text-faint">
-                Aucune étiquette pour le moment.
+                {text("noTags")}
               </p>
             )}
           </div>
@@ -242,7 +245,7 @@ export function TagManager() {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Nouvelle étiquette
+            {text("newTag")}
           </button>
         </div>
       )}

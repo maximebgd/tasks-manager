@@ -1,4 +1,6 @@
 import { headers } from "next/headers";
+import { getLocaleFromCookieHeader } from "@/lib/i18n/locale";
+import { mcpText } from "@/lib/i18n/mcp";
 import Link from "next/link";
 import { CopyField, CopyPromptButton } from "./copy-field";
 import { McpStatus } from "./status";
@@ -10,13 +12,14 @@ export const dynamic = "force-dynamic";
 
 export default async function McpSettingsPage() {
   const h = await headers();
+  const locale = getLocaleFromCookieHeader(h.get("cookie") ?? undefined);
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const endpoint = `${proto}://${host}/api/mcp`;
 
   const token = process.env.MCP_TOKEN ?? "";
   const configured = token.length > 0;
-  const tokenForSnippet = configured ? token : "<TON_TOKEN>";
+  const tokenForSnippet = configured ? token : mcpText(locale, "tokenPlaceholder");
 
   const claudeSnippet = JSON.stringify(
     {
@@ -38,28 +41,14 @@ export default async function McpSettingsPage() {
 
   // Prompt clé-en-main à coller dans un agent (Claude Code, Codex…) pour qu'il
   // se branche seul au serveur MCP à partir de l'URL et du token.
-  const agentPrompt = `Connecte-toi à mon serveur MCP « tasks-manager » (gestionnaire de tâches : tableau kanban, todos journalières, étiquettes) pour pouvoir lire et modifier mes tâches.
-
-Détails de connexion (transport Streamable HTTP) :
-- URL de l'endpoint : ${endpoint}
-- Authentification : en-tête HTTP « Authorization: Bearer ${tokenForSnippet} »
-
-Si tu es Claude Code (CLI), exécute :
-  claude mcp add --transport http tasks-manager ${endpoint} --header "Authorization: Bearer ${tokenForSnippet}"
-
-Sinon, ajoute ce serveur à ta configuration MCP via le pont mcp-remote :
-  npx mcp-remote ${endpoint} --header "Authorization: Bearer ${tokenForSnippet}"
-
-Une fois connecté, liste les outils exposés par le serveur, puis confirme que tout fonctionne en m'affichant mes tâches en cours.`;
+  const agentPrompt = mcpText(locale, "promptBody", { endpoint, token: tokenForSnippet });
 
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-10">
       <header className="mb-8">
-        <h1 className="text-2xl font-semibold text-content">Serveur MCP</h1>
+        <h1 className="text-2xl font-semibold text-content">{mcpText(locale, "title")}</h1>
         <p className="mt-2 text-sm text-muted">
-          Connecte ton propre LLM (Claude Desktop, LM Studio, Ollama…) à cette
-          application via le protocole MCP. Le modèle pourra alors lire et
-          modifier tes tâches, étiquettes et todos journalières.
+          {mcpText(locale, "intro")}
         </p>
       </header>
 
@@ -68,74 +57,62 @@ Une fois connecté, liste les outils exposés par le serveur, puis confirme que 
       {!configured && (
         <div className="mb-8 rounded-2xl border border-line bg-surface-muted p-4">
           <p className="text-sm font-medium text-content">
-            ⚠️ Aucun token configuré
+            ⚠️ {mcpText(locale, "noToken")}
           </p>
           <p className="mt-1 text-sm text-muted">
-            L'endpoint est inactif tant que la variable{" "}
-            <code className="font-mono text-content">MCP_TOKEN</code> n'est pas
-            définie. Ajoute une ligne dans ton fichier{" "}
-            <code className="font-mono text-content">.env</code> puis redémarre
-            le serveur :
+            {mcpText(locale, "tokenHelp")}
           </p>
           <div className="mt-3">
-            <CopyField value='MCP_TOKEN="genere-un-secret-long-et-aleatoire"' multiline />
+            <CopyField value={`MCP_TOKEN="${locale === "fr" ? "generez-un-secret-long-et-aleatoire" : "genera-un-secreto-largo-y-aleatorio"}"`} multiline />
           </div>
         </div>
       )}
 
       <section className="flex flex-col gap-6 rounded-2xl border border-line bg-surface p-6 shadow-card">
-        <CopyField label="URL de l'endpoint" value={endpoint} />
+        <CopyField label={mcpText(locale, "endpoint")} value={endpoint} />
         {configured && (
-          <CopyField label="Token d'accès (Bearer)" value={token} masked />
+          <CopyField label={mcpText(locale, "accessToken")} value={token} masked />
         )}
 
         <div className="flex flex-col gap-2">
           <span className="text-xs font-medium text-muted">
-            Configuration Claude Desktop / LM Studio
+            {mcpText(locale, "clientConfig")}
           </span>
           <p className="text-sm text-muted">
-            Colle ceci dans le fichier de config de ton client (ex.{" "}
-            <code className="font-mono text-content">claude_desktop_config.json</code>).
-            Le pont <code className="font-mono text-content">mcp-remote</code>{" "}
-            relaie le transport HTTP + l'en-tête d'authentification.
+            {mcpText(locale, "configHelp")}
           </p>
           <CopyField value={claudeSnippet} multiline />
         </div>
 
         <div className="flex flex-col gap-2 border-t border-line pt-6">
           <span className="text-xs font-medium text-muted">
-            Connexion automatique par un agent
+            {mcpText(locale, "autoConnect")}
           </span>
           <p className="text-sm text-muted">
-            Copie un prompt prêt à coller dans un agent (Claude Code, Codex…)
-            avec l'URL, le token et les commandes de connexion : il se branchera
-            seul au serveur MCP.
+            {mcpText(locale, "promptHelp")}
             {!configured && (
               <>
                 {" "}
                 <span className="text-content">
-                  Définis d'abord un <code className="font-mono">MCP_TOKEN</code>{" "}
-                  pour un prompt fonctionnel.
+                  {mcpText(locale, "defineToken")}
                 </span>
               </>
             )}
           </p>
-          <CopyPromptButton value={agentPrompt} />
+          <CopyPromptButton value={agentPrompt} label={mcpText(locale, "agent")} />
         </div>
       </section>
 
       <section className="mt-8">
-        <h2 className="text-sm font-semibold text-content">Outils exposés</h2>
+        <h2 className="text-sm font-semibold text-content">{mcpText(locale, "exposedTools")}</h2>
         <p className="mt-2 text-sm text-muted">
-          Tâches (lister, rechercher, créer, modifier, corbeille, restaurer,
-          purger), étiquettes (CRUD) et todos journalières (créer, cocher,
-          sous-tâches, corbeille). Périmètre : lecture + écriture complète.
+          {mcpText(locale, "toolsSummary")}
         </p>
         <Link
           href="/settings/mcp/tools"
           className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-2 text-sm font-medium text-content transition duration-200 ease-smooth hover:bg-surface-hover"
         >
-          Référence des outils
+          {mcpText(locale, "toolReference")}
           <span aria-hidden="true">→</span>
         </Link>
       </section>

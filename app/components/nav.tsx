@@ -6,6 +6,9 @@ import type { ReactNode } from "react";
 import { ThemeToggle } from "./theme-toggle";
 import { SyncIndicator } from "./sync-indicator";
 import { Clock } from "./clock";
+import { LanguageSelector } from "./language-selector";
+import type { Locale } from "@/lib/i18n/locale";
+import { translations } from "@/lib/i18n/catalogs";
 
 const icon = (paths: ReactNode) => (
   <svg
@@ -80,8 +83,13 @@ const links = [
   },
 ];
 
-export function Nav() {
+export function Nav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
+  const t = translations[locale];
+  const localizedLinks = links.map((link, index) => ({
+    ...link,
+    label: [t.board, t.daily, t.calendar, t.trash, "MCP"][index],
+  }));
 
   return (
     <nav className="glass sticky top-0 z-20 flex h-screen w-16 flex-col border-r border-line px-3 py-4 lg:w-56">
@@ -114,10 +122,10 @@ export function Nav() {
             />
           </svg>
         </span>
-        <span className="hidden lg:inline">Tasks Manager</span>
+        <span className="hidden lg:inline">{translations[locale].brand}</span>
       </Link>
       <div className="flex flex-col gap-1">
-        {links.map((l) => {
+        {localizedLinks.map((l) => {
           const active = pathname === l.href;
           return (
             <Link
@@ -136,12 +144,13 @@ export function Nav() {
           );
         })}
       </div>
-      <div className="mt-auto">
-        <Clock />
+      <div className="mt-auto flex flex-col gap-3">
+        <LanguageSelector locale={locale} />
+        <Clock locale={locale} />
       </div>
       <div className="flex items-center justify-center gap-2 border-t border-line pt-3 lg:justify-between lg:px-1">
-        <ThemeToggle />
-        <SyncIndicator />
+        <ThemeToggle locale={locale} />
+        <SyncIndicator locale={locale} />
       </div>
     </nav>
   );

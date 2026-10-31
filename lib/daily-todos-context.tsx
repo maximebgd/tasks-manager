@@ -4,6 +4,8 @@ import { createContext, useContext, useMemo, useState } from "react";
 import type { DailyTodo, SubTodo } from "./types";
 import { useToast } from "./toast-context";
 import { useSync } from "./sync-context";
+import { useLocale } from "./i18n/task-ui";
+import { remainingText } from "./i18n/remaining";
 import {
   createDailyTodoAction,
   setDailyTodoDoneAction,
@@ -78,6 +80,7 @@ export function DailyTodosProvider({
   const [allTodos, setAllTodos] = useState<DailyTodo[]>(initialTodos);
   const toast = useToast();
   const sync = useSync();
+  const locale = useLocale();
 
   const dailyTodos = useMemo(
     () =>
@@ -156,7 +159,7 @@ export function DailyTodosProvider({
     persist(
       createDailyTodoAction(input),
       snapshot,
-      "Impossible d'ajouter la tâche",
+      remainingText(locale, "toastTodoAdded"),
     );
   };
 
@@ -169,7 +172,7 @@ export function DailyTodosProvider({
     persist(
       setDailyTodoDoneAction(id, done),
       snapshot,
-      "Impossible d'enregistrer la tâche",
+      remainingText(locale, "toastTodoSaved"),
     );
   };
 
@@ -179,13 +182,13 @@ export function DailyTodosProvider({
     setAllTodos(allTodos.map((t) => (t.id === id ? { ...t, deletedAt } : t)));
     persist(
       softDeleteDailyTodoAction(id).then(() =>
-        toast.success("Tâche déplacée dans la corbeille", {
-          label: "Annuler",
+        toast.success(remainingText(locale, "toastTodoDeleted"), {
+          label: remainingText(locale, "undo"),
           onClick: () => restoreTodo(id),
         }),
       ),
       snapshot,
-      "Impossible de supprimer la tâche",
+      remainingText(locale, "toastTodoDeleteError"),
     );
   };
 
@@ -197,9 +200,9 @@ export function DailyTodosProvider({
       prev.map((t) => (t.id === id ? { ...t, deletedAt: null } : t)),
     );
     persist(
-      restoreDailyTodoAction(id).then(() => toast.success("Tâche restaurée")),
+      restoreDailyTodoAction(id).then(() => toast.success(remainingText(locale, "toastTodoRestored"))),
       snapshot,
-      "Impossible de restaurer la tâche",
+      remainingText(locale, "toastRestoreError"),
     );
   };
 
@@ -208,10 +211,10 @@ export function DailyTodosProvider({
     setAllTodos(allTodos.filter((t) => t.id !== id));
     persist(
       purgeDailyTodoAction(id).then(() =>
-        toast.success("Supprimée définitivement"),
+        toast.success(remainingText(locale, "toastPurged")),
       ),
       snapshot,
-      "Impossible de supprimer définitivement la tâche",
+      remainingText(locale, "toastPurgeError"),
     );
   };
 
@@ -222,7 +225,7 @@ export function DailyTodosProvider({
     persist(
       reorderDailyTodosAction(next.map((t, i) => ({ id: t.id, position: i }))),
       snapshot,
-      "Impossible de réordonner les tâches",
+      remainingText(locale, "toastReorderError"),
     );
   };
 
@@ -252,7 +255,7 @@ export function DailyTodosProvider({
         title: input.title,
       }),
       snapshot,
-      "Impossible d'ajouter la sous-tâche",
+      remainingText(locale, "toastSubtaskAdded"),
     );
   };
 
@@ -267,7 +270,7 @@ export function DailyTodosProvider({
     persist(
       setSubtaskDoneAction(subId, done),
       snapshot,
-      "Impossible d'enregistrer la sous-tâche",
+      remainingText(locale, "toastSubtaskSaved"),
     );
   };
 
@@ -277,13 +280,13 @@ export function DailyTodosProvider({
     setAllTodos(mapSub(subId, (s) => ({ ...s, deletedAt })));
     persist(
       softDeleteSubtaskAction(subId).then(() =>
-        toast.success("Sous-tâche déplacée dans la corbeille", {
-          label: "Annuler",
+        toast.success(remainingText(locale, "toastSubtaskDeleted"), {
+          label: remainingText(locale, "undo"),
           onClick: () => restoreSubtask(subId),
         }),
       ),
       snapshot,
-      "Impossible de supprimer la sous-tâche",
+      remainingText(locale, "toastSubtaskDeleteError"),
     );
   };
 
@@ -301,10 +304,10 @@ export function DailyTodosProvider({
     );
     persist(
       restoreSubtaskAction(subId).then(() =>
-        toast.success("Sous-tâche restaurée"),
+        toast.success(remainingText(locale, "toastSubtaskRestored")),
       ),
       snapshot,
-      "Impossible de restaurer la sous-tâche",
+      remainingText(locale, "toastRestoreError"),
     );
   };
 
@@ -318,10 +321,10 @@ export function DailyTodosProvider({
     );
     persist(
       purgeSubtaskAction(subId).then(() =>
-        toast.success("Supprimée définitivement"),
+        toast.success(remainingText(locale, "toastPurged")),
       ),
       snapshot,
-      "Impossible de supprimer définitivement la sous-tâche",
+      remainingText(locale, "toastSubtaskPurgeError"),
     );
   };
 
@@ -338,7 +341,7 @@ export function DailyTodosProvider({
     persist(
       reorderSubtasksAction(next.map((s, i) => ({ id: s.id, position: i }))),
       snapshot,
-      "Impossible de réordonner les sous-tâches",
+      remainingText(locale, "toastSubtaskReorderError"),
     );
   };
 

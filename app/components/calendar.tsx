@@ -5,22 +5,9 @@ import type { Priority, Task } from "@/lib/types";
 import { priorityLabel } from "@/lib/types";
 import { useTasks } from "@/lib/tasks-context";
 import { toISO, todayISO } from "@/lib/date";
+import { useLocale } from "@/lib/i18n/task-ui";
+import { remainingText, formatRemainingDate, formatCalendarMonth, formatCalendarWeekdays } from "@/lib/i18n/remaining";
 
-const WEEKDAYS =["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-const MONTHS = [
-  "Janvier",
-  "Février",
-  "Mars",
-  "Avril",
-  "Mai",
-  "Juin",
-  "Juillet",
-  "Août",
-  "Septembre",
-  "Octobre",
-  "Novembre",
-  "Décembre",
-];
 
 const priorityDot: Record<Priority, string> = {
   low: "bg-faint",
@@ -29,15 +16,14 @@ const priorityDot: Record<Priority, string> = {
 };
 
 // Libellé long d'une date ISO, pour les toasts (« 4 août »).
-function longDate(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-  });
+function longDate(iso: string, locale: "fr" | "es") {
+  return formatRemainingDate(iso, locale, { day: "numeric", month: "long" });
 }
 
 export function Calendar() {
   const { tasks, updateTask } = useTasks();
+  const locale = useLocale();
+  const weekdays = formatCalendarWeekdays(locale);
   const today = new Date();
   const [view, setView] = useState<"month" | "week">("month");
   // Jour de référence (ISO) : détermine le mois affiché ou la semaine affichée.
@@ -58,7 +44,7 @@ export function Calendar() {
     if (!id) return;
     const task = tasks.find((t) => t.id === id);
     if (!task || task.dueDate === dateISO) return;
-    updateTask(id, { dueDate: dateISO }, `Échéance fixée au ${longDate(dateISO)}`);
+    updateTask(id, { dueDate: dateISO }, remainingText(locale, "dueSet", { date: longDate(dateISO, locale) }));
   }
 
   const tasksByDate = useMemo(() => {
@@ -132,15 +118,10 @@ export function Calendar() {
       start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
       const end = new Date(start);
       end.setDate(start.getDate() + 6);
-      const fmt = (d: Date, withYear: boolean) =>
-        d.toLocaleDateString("fr-FR", {
-          day: "numeric",
-          month: "short",
-          ...(withYear ? { year: "numeric" } : {}),
-        });
+      const fmt = (d: Date, withYear: boolean) => formatRemainingDate(d, locale, { day: "numeric", month: "short", ...(withYear ? { year: "numeric" } : {}) });
       return `${fmt(start, false)} – ${fmt(end, true)}`;
     }
-    return `${MONTHS[base.getMonth()]} ${base.getFullYear()}`;
+    return formatCalendarMonth(base, locale);
   }, [anchor, view]);
 
   const todayStr = toISO(today);
@@ -150,32 +131,32 @@ export function Calendar() {
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-content">
-            Calendrier
+            {remainingText(locale, "calendarTitle")}
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Échéances de vos tâches
+            {remainingText(locale, "calendarIntro")}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 rounded-full border border-line bg-surface p-1 shadow-card">
             <ViewChip active={view === "month"} onClick={() => setView("month")}>
-              Mois
+              {remainingText(locale, "calendarMonth")}
             </ViewChip>
             <ViewChip active={view === "week"} onClick={() => setView("week")}>
-              Semaine
+              {remainingText(locale, "calendarWeek")}
             </ViewChip>
           </div>
           <button
             onClick={goToday}
             className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-muted shadow-card transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-95"
           >
-            Aujourd&apos;hui
+            {remainingText(locale, "calendarToday")}
           </button>
           <div className="flex items-center overflow-hidden rounded-full border border-line bg-surface shadow-card">
             <button
               onClick={() => shift(-1)}
-              aria-label={view === "week" ? "Semaine précédente" : "Mois précédent"}
+              aria-label={remainingText(locale, view === "week" ? "calendarPrevWeek" : "calendarPrevMonth")}
               className="rounded-l-full px-2.5 py-1.5 text-muted transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-90"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -184,7 +165,7 @@ export function Calendar() {
             </button>
             <button
               onClick={() => shift(1)}
-              aria-label={view === "week" ? "Semaine suivante" : "Mois suivant"}
+              aria-label={remainingText(locale, view === "week" ? "calendarNextWeek" : "calendarNextMonth")}
               className="rounded-r-full px-2.5 py-1.5 text-muted transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-90"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -200,7 +181,7 @@ export function Calendar() {
 
       <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
         <div className="grid grid-cols-7 border-b border-line bg-surface-muted">
-          {WEEKDAYS.map((d) => (
+          {weekdays.map((d) => (
             <div
               key={d}
               className="px-2 py-2 text-center text-xs font-medium uppercase tracking-wide text-faint"
@@ -275,7 +256,7 @@ export function Calendar() {
                         setDraggingId(t.id);
                       }}
                       onDragEnd={resetDrag}
-                      title={`${t.title} · ${priorityLabel(t.priority)} · glisser pour changer d'échéance`}
+                      title={`${t.title} · ${priorityLabel(t.priority)} · ${remainingText(locale, "calendarTaskDrag")}`}
                       className={`flex cursor-grab items-center gap-1 rounded px-1.5 py-1 text-xs active:cursor-grabbing ${
                         draggingId === t.id ? "opacity-40 ring-1 ring-accent" : ""
                       } ${
@@ -300,10 +281,10 @@ export function Calendar() {
       {noDueDate.length > 0 && (
         <section className="mt-6">
           <h2 className="mb-2 text-sm font-medium text-content">
-            Sans échéance ({noDueDate.length})
+            {remainingText(locale, "calendarNoDue")} ({noDueDate.length})
           </h2>
           <p className="mb-2 text-xs text-faint">
-            Glissez une tâche sur un jour pour lui donner une échéance.
+            {remainingText(locale, "calendarDragDue")}
           </p>
           <div className="flex flex-wrap gap-2">
             {noDueDate.map((t) => (
@@ -316,7 +297,7 @@ export function Calendar() {
                   setDraggingId(t.id);
                 }}
                 onDragEnd={resetDrag}
-                title="Glisser sur un jour pour définir l'échéance"
+                title={remainingText(locale, "calendarDragSet")}
                 className={`inline-flex cursor-grab items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-xs text-muted shadow-card transition duration-200 ease-smooth hover:shadow-lift active:cursor-grabbing ${
                   draggingId === t.id ? "opacity-40 ring-1 ring-accent" : ""
                 }`}

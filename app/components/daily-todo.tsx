@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { toISO, todayISO } from "@/lib/date";
 import { useDailyTodos } from "@/lib/daily-todos-context";
+import { useLocale } from "@/lib/i18n/task-ui";
+import { remainingText, formatRemainingDate } from "@/lib/i18n/remaining";
 
 function shiftDay(dateISO: string, delta: number) {
   const d = new Date(dateISO + "T00:00:00");
@@ -10,16 +12,13 @@ function shiftDay(dateISO: string, delta: number) {
   return toISO(d);
 }
 
-function formatLong(dateISO: string) {
-  return new Date(dateISO + "T00:00:00").toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+function formatLong(dateISO: string, locale: "fr" | "es") {
+  return formatRemainingDate(dateISO, locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
 export function DailyTodoList() {
+  const locale = useLocale();
+  const text = (key: Parameters<typeof remainingText>[1]) => remainingText(locale, key);
   const {
     dailyTodos: todos,
     addTodo: addTodoCtx,
@@ -149,17 +148,17 @@ export function DailyTodoList() {
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-content">
-          Todo journalière
+          {text("dailyTitle")}
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Vos tâches à faire, jour après jour
+          {text("dailyIntro")}
         </p>
       </header>
 
       <div className="mb-4 flex items-center justify-between gap-3">
         <button
           onClick={() => setSelectedDate((d) => shiftDay(d, -1))}
-          aria-label="Jour précédent"
+          aria-label={text("previousDay")}
           className="rounded-full border border-line bg-surface p-2 text-muted shadow-card transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-90"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -169,21 +168,21 @@ export function DailyTodoList() {
 
         <div className="text-center">
           <div className="text-sm font-medium capitalize text-content">
-            {formatLong(selectedDate)}
+            {formatLong(selectedDate, locale)}
           </div>
           {!isToday && (
             <button
               onClick={() => setSelectedDate(todayISO())}
               className="mt-0.5 text-xs font-medium text-accent-text hover:underline"
             >
-              Revenir à aujourd&apos;hui
+              {text("today")}
             </button>
           )}
         </div>
 
         <button
           onClick={() => setSelectedDate((d) => shiftDay(d, 1))}
-          aria-label="Jour suivant"
+          aria-label={text("nextDay")}
           className="rounded-full border border-line bg-surface p-2 text-muted shadow-card transition duration-200 ease-smooth hover:bg-surface-hover hover:text-content active:scale-90"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -197,7 +196,7 @@ export function DailyTodoList() {
           <div className="mb-4">
             <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-muted">
               <span>
-                {doneCount} / {dayTodos.length} terminées
+                {doneCount} / {dayTodos.length} {text("completed")}
               </span>
               <span>{percent}%</span>
             </div>
@@ -259,7 +258,7 @@ export function DailyTodoList() {
                     setDraggingId(t.id);
                   }}
                   onDragEnd={resetDrag}
-                  aria-label="Réordonner la tâche"
+                  aria-label={text("reorderTodo")}
                   className="grid shrink-0 cursor-grab place-items-center text-faint opacity-0 transition group-hover:opacity-100 active:cursor-grabbing"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -307,7 +306,7 @@ export function DailyTodoList() {
                     e.stopPropagation();
                     remove(t.id);
                   }}
-                  aria-label="Supprimer"
+                  aria-label={text("delete")}
                   className="shrink-0 rounded p-1 text-faint opacity-0 transition hover:bg-tag-red hover:text-tag-red-text group-hover:opacity-100"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -362,7 +361,7 @@ export function DailyTodoList() {
                           setDraggingSub({ parentId: t.id, subId: s.id });
                         }}
                         onDragEnd={resetSubDrag}
-                        aria-label="Réordonner la sous-tâche"
+                        aria-label={text("reorderSubtask")}
                         className="grid shrink-0 cursor-grab place-items-center text-faint opacity-0 transition group-hover/sub:opacity-100 active:cursor-grabbing"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -400,7 +399,7 @@ export function DailyTodoList() {
                           e.stopPropagation();
                           removeSubtask(t.id, s.id);
                         }}
-                        aria-label="Supprimer la sous-tâche"
+                        aria-label={text("deleteSubtask")}
                         className="shrink-0 rounded p-0.5 text-faint opacity-0 transition hover:text-tag-red-text group-hover/sub:opacity-100"
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -435,7 +434,7 @@ export function DailyTodoList() {
                         setAddingSubFor(null);
                       }
                     }}
-                    placeholder="Sous-tâche…"
+                    placeholder={text("subtaskPlaceholder")}
                     className="flex-1 bg-transparent text-sm text-content outline-none placeholder:text-faint"
                   />
                 </form>
@@ -450,7 +449,7 @@ export function DailyTodoList() {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="M12 5v14M5 12h14" />
                   </svg>
-                  Sous-tâche
+                  {text("subtask")}
                 </button>
               )}
             </li>
@@ -458,7 +457,7 @@ export function DailyTodoList() {
 
           {dayTodos.length === 0 && (
             <li className="py-6 text-center text-sm text-faint">
-              Rien de prévu ce jour. Ajoutez une tâche ci-dessous.
+              {text("emptyDay")}
             </li>
           )}
         </ul>
@@ -467,7 +466,7 @@ export function DailyTodoList() {
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ajouter une tâche pour ce jour…"
+            placeholder={text("addForDay")}
             className="flex-1 rounded-full border border-line bg-surface px-3.5 py-2 text-sm text-content shadow-card outline-none transition duration-200 ease-smooth placeholder:text-faint hover:border-line-strong focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />
           <button
@@ -475,7 +474,7 @@ export function DailyTodoList() {
             disabled={!draft.trim()}
             className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-card transition duration-200 ease-spring hover:shadow-lift hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           >
-            Ajouter
+            {text("add")}
           </button>
         </form>
       </div>

@@ -2,6 +2,13 @@
 
 import { prisma } from "@/lib/prisma";
 import type { Priority, Status } from "@/lib/types";
+import { getTasks, getTrashedTasks } from "@/lib/data";
+
+/** Snapshot en lecture seule pour la synchronisation de l'interface. */
+export async function getTaskSnapshotAction() {
+  const [active, trashed] = await Promise.all([getTasks(), getTrashedTasks()]);
+  return { active, trashed };
+}
 
 // Server Actions des tâches du tableau. Appelées depuis le client, elles
 // persistent en base ce que l'UI applique déjà de façon optimiste.
